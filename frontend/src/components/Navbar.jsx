@@ -5,6 +5,7 @@ import { PREMIUM_COMING_SOON } from "../utils/features";
 
 const MAIN_LINKS = [
   { to: "/", label: "Home", icon: "🏠", end: true },
+  { to: "/admissions", label: "Admissions", icon: "✨" },
   { to: "/courses", label: "Courses", icon: "🎓" },
   { to: "/exam-portal", label: "Exams", icon: "📋" },
   { to: "/career-roadmaps", label: "Careers", icon: "🗺️" },

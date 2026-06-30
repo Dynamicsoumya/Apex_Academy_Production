@@ -95,8 +95,11 @@ export default function Home() {
             ))}
           </div>
           <div className="hero-buttons">
-            <Link to="/register" className="btn btn-primary btn-lg join-glow-btn">
-              Join Apex Academy — Free
+            <Link to="/admissions" className="btn btn-primary btn-lg join-glow-btn">
+              Apply for Admission →
+            </Link>
+            <Link to="/register" className="btn btn-outline btn-lg">
+              Create Free Account
             </Link>
             <a href="#videos" className="btn btn-outline btn-lg">
               Watch Free Lectures

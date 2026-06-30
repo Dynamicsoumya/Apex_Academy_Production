@@ -14,6 +14,7 @@ const pyqRoutes = require("./routes/pyqRoutes");
 const premiumRoutes = require("./routes/premiumRoutes");
 const examRoutes = require("./routes/examRoutes");
 const timetableRoutes = require("./routes/timetableRoutes");
+const admissionRoutes = require("./routes/admissionRoutes");
 
 const app = express();
 
@@ -54,6 +55,7 @@ app.use("/api/pyq", pyqRoutes);
 app.use("/api/premium", premiumRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/timetable", timetableRoutes);
+app.use("/api/admissions", admissionRoutes);
 
 // API 404 handler
 app.use("/api", (req, res) => {

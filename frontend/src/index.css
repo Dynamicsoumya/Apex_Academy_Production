@@ -4895,102 +4895,6 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
   font-size: 15px;
 }
 
-/* ─── Dashboard (legacy — overridden by refresh block below) ─── */
-.dash-layout {
-  display: block;
-  min-height: calc(100vh - 64px);
-  background: #f0f2f8;
-}
-
-.dash-sidebar {
-  width: var(--dash-sidebar-width);
-  flex-shrink: 0;
-}
-
-.dash-user-card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 0 20px 24px;
-  margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.dash-avatar {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, var(--gold), #e8c84a);
-  color: var(--navy);
-  font-weight: 800;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.dash-user-name {
-  font-weight: 700;
-  font-size: 15px;
-  margin: 0 0 4px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 150px;
-}
-
-.dash-role-badge {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 20px;
-  letter-spacing: 0.3px;
-}
-
-.dash-role-student { background: rgba(30, 58, 138, 0.5); color: #93c5fd; }
-.dash-role-admin { background: rgba(212, 175, 55, 0.2); color: var(--gold); }
-
-.dash-nav {
-  padding: 12px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.dash-nav-link {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  color: #94a3b8;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.2s, color 0.2s;
-}
-
-.dash-nav-link:hover { background: rgba(255, 255, 255, 0.06); color: white; }
-
-.dash-nav-link.active {
-  background: rgba(212, 175, 55, 0.15);
-  color: var(--gold);
-  font-weight: 600;
-}
-
-.dash-nav-icon { font-size: 18px; }
-
-.dash-sidebar-logo {
-  width: 100%;
-  max-width: 130px;
-  height: auto;
-}
-
-.dash-main {
-  flex: 1;
-  overflow-y: auto;
-}
-
 .dash-header {
   display: flex;
   justify-content: space-between;
@@ -5194,7 +5098,24 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 /* ─── Dashboard refresh (fixed left sidebar) ─── */
 :root {
   --dash-sidebar-width: 272px;
-  --dash-navbar-offset: 78px;
+  --dash-navbar-offset: 0;
+}
+
+.dash-layout--portal {
+  min-height: 100vh;
+}
+
+.dash-layout--portal .dash-sidebar {
+  top: 0;
+  height: 100vh;
+}
+
+.dash-layout--portal .dash-main {
+  min-height: 100vh;
+}
+
+.dash-layout--wide .dash-page {
+  max-width: none;
 }
 
 .dash-layout {
@@ -5426,6 +5347,9 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 }
 
 .dash-user-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   padding: 20px;
   margin: 16px 14px 8px;
   border-radius: 16px;
@@ -5435,15 +5359,32 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 }
 
 .dash-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   width: 50px;
   height: 50px;
   border-radius: 14px;
+  background: linear-gradient(135deg, var(--gold), #c9a227);
+  color: var(--navy);
+  font-weight: 800;
+  font-size: 16px;
   box-shadow: 0 6px 18px rgba(212, 175, 55, 0.35);
 }
 
 .dash-user-info { min-width: 0; flex: 1; }
 
-.dash-user-name { max-width: none; }
+.dash-user-name {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: white;
+  max-width: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .dash-user-meta {
   display: block;
@@ -5453,12 +5394,24 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 }
 
 .dash-role-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
 }
 
 .dash-role-student { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+
+.dash-role-admin { background: rgba(212, 175, 55, 0.2); color: var(--gold-light); }
+
+.dash-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+}
 
 .dash-nav-group {
   margin: 14px 10px 6px;
@@ -5470,9 +5423,13 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 }
 
 .dash-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   color: #cbd5e1;
+  text-decoration: none;
   border: 1px solid transparent;
   transition: background 0.2s, color 0.2s, transform 0.15s;
   position: relative;
@@ -5600,6 +5557,8 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
 .dash-stat-cards-hero .dash-stat-card strong { color: white; }
 
 .dash-stat-cards-hero .dash-stat-card span { color: #cbd5e1; }
+
+.dash-hero-admin .dash-greeting { color: var(--gold-light); }
 
 .dash-stat-card {
   border-radius: 16px;
@@ -6500,8 +6459,8 @@ body:has(.sticky-enroll-bar) .whatsapp-float {
     transform: translateX(-105%);
     transition: transform 0.28s ease;
     width: min(290px, 88vw);
-    height: calc(100vh - var(--dash-navbar-offset));
-    top: var(--dash-navbar-offset);
+    height: 100vh;
+    top: 0;
     left: 0;
     display: flex;
     flex-direction: column;

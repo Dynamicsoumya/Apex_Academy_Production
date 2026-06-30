@@ -18,19 +18,26 @@ import AdminExams from "./pages/AdminExams";
 import AdminTimetable from "./pages/AdminTimetable";
 import StudentTimetable from "./pages/StudentTimetable";
 import CareerRoadmaps from "./pages/CareerRoadmaps";
+import AdmissionPortal from "./pages/AdmissionPortal";
+import AdminAdmissions from "./pages/AdminAdmissions";
 import { getStoredUser } from "./utils/auth";
 
 function AppContent() {
   const location = useLocation();
   const isAuthPage = ["/login", "/register", "/admin-setup", "/forgot-password"].includes(location.pathname);
+  const isDashboardPage =
+    location.pathname === "/student" ||
+    location.pathname === "/timetable" ||
+    location.pathname.startsWith("/admin");
   const user = getStoredUser();
-  const showJoinCTA = !isAuthPage && !user;
+  const showJoinCTA = !isAuthPage && !user && location.pathname !== "/admissions";
 
   return (
     <>
-      {!isAuthPage && <Navbar />}
+      {!isAuthPage && !isDashboardPage && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/admissions" element={<AdmissionPortal />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register" element={<Register />} />
@@ -56,6 +63,10 @@ function AppContent() {
         <Route
           path="/student"
           element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="/admin/admissions"
+          element={<ProtectedRoute role="admin"><AdminAdmissions /></ProtectedRoute>}
         />
         <Route
           path="/admin"

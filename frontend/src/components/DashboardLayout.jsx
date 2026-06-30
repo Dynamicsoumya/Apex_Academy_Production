@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-export default function DashboardLayout({ user, role, navItems, children }) {
+export default function DashboardLayout({ user, role, navItems, children, wide = false }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -18,8 +18,16 @@ export default function DashboardLayout({ user, role, navItems, children }) {
 
   const portalLabel = role === "admin" ? "Admin Portal" : "Student Portal";
 
+  const isNavActive = (item) => {
+    const current = `${location.pathname}${location.hash}`;
+    if (item.to.includes("#")) return current === item.to;
+    if (item.to === "/admin") return location.pathname === "/admin";
+    if (item.to === "/student") return location.pathname === "/student";
+    return location.pathname === item.to || location.pathname.startsWith(`${item.to}/`);
+  };
+
   return (
-    <div className="dash-layout">
+    <div className={`dash-layout dash-layout--portal ${wide ? "dash-layout--wide" : ""}`}>
       {menuOpen && (
         <button
           type="button"
@@ -61,10 +69,7 @@ export default function DashboardLayout({ user, role, navItems, children }) {
                 );
               }
 
-              const current = `${location.pathname}${location.hash}`;
-              const isActive = item.to.includes("#")
-                ? current === item.to
-                : location.pathname === item.to && !location.hash;
+              const isActive = isNavActive(item);
 
               return (
                 <Link

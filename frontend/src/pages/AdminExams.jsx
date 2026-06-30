@@ -3,16 +3,9 @@ import { Link } from "react-router-dom";
 import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import { getStoredUser } from "../utils/auth";
+import { ADMIN_NAV } from "../utils/adminNav";
 
-const NAV = [
-  { type: "group", label: "Admin Tools" },
-  { to: "/admin", icon: "📤", label: "Upload Content" },
-  { to: "/admin/timetable", icon: "📅", label: "Timetable" },
-  { to: "/admin/exams", icon: "📝", label: "Exam Portal" },
-  { to: "/admin#premium", icon: "👑", label: "Premium Section" },
-  { type: "group", label: "Site" },
-  { to: "/", icon: "🏠", label: "Back to Home" },
-];
+const NAV = ADMIN_NAV;
 
 const CLASSES = ["10th", "11th", "12th"];
 const SCIENCE_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "General Science", "English"];

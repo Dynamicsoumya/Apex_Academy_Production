@@ -9,6 +9,7 @@ export const API_BASE = getApiBase();
 
 export function mediaUrl(path) {
   if (!path) return "";
-  if (path.startsWith("http")) return path;
-  return `${API_BASE}${path}`;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("//")) return `https:${path}`;
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }

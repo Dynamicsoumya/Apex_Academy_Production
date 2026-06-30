@@ -3,19 +3,10 @@ import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import { TimetableWeekGrid, HolidayCalendar } from "../components/TimetableWidgets";
 import { getStoredUser } from "../utils/auth";
+import { ADMIN_NAV } from "../utils/adminNav";
 import { BATCH_PROGRAMS, DAY_NAMES, HOLIDAY_BATCH_OPTIONS } from "../utils/academyClasses";
 
-const NAV = [
-  { type: "group", label: "Admin Tools" },
-  { to: "/admin", icon: "📤", label: "Upload Content" },
-  { to: "/admin/timetable", icon: "📅", label: "Timetable" },
-  { to: "/admin#premium", icon: "👑", label: "Premium Section" },
-  { to: "/admin/exams", icon: "📋", label: "Exam Portal" },
-  { to: "/questions", icon: "📝", label: "PYQ Papers" },
-  { to: "/courses", icon: "🎓", label: "Manage Courses" },
-  { type: "group", label: "Site" },
-  { to: "/", icon: "🏠", label: "Back to Home" },
-];
+const NAV = ADMIN_NAV;
 
 const EMPTY_SLOT = {
   dayOfWeek: 1,

@@ -19,6 +19,7 @@ const NAV = [
   { to: "/student#dash-pdfs", icon: "📄", label: "PDF Notes" },
   { to: "/student#dash-lectures", icon: "🎬", label: "Video Lectures" },
   { to: "/exam-portal", icon: "📋", label: "Exam Portal" },
+  { to: "/admissions", icon: "✨", label: "Admissions" },
   { to: "/student#dash-reviews", icon: "⭐", label: "Reviews" },
   { type: "group", label: "Explore" },
   { to: "/career-roadmaps", icon: "🗺️", label: "Career Roadmaps" },

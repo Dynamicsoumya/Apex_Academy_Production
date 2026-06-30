@@ -1,26 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import SubjectIcon from "../components/SubjectIcon";
 import Pagination from "../components/Pagination";
 import { getStoredUser } from "../utils/auth";
+import { ADMIN_NAV } from "../utils/adminNav";
 import { ACADEMY_CLASSES, subjectsForClass } from "../utils/academyClasses";
 import { isPdfDoc, isLectureDoc } from "../utils/documents";
 import { mediaUrl } from "../utils/mediaUrl";
 import { paginateItems } from "../utils/pagination";
 
-const NAV = [
-  { type: "group", label: "Admin Tools" },
-  { to: "/admin", icon: "📤", label: "Upload Content" },
-  { to: "/admin/timetable", icon: "📅", label: "Timetable" },
-  { to: "/admin#premium", icon: "👑", label: "Premium Section" },
-  { to: "/admin/exams", icon: "📋", label: "Exam Portal" },
-  { to: "/questions", icon: "📝", label: "PYQ Papers" },
-  { to: "/courses", icon: "🎓", label: "Manage Courses" },
-  { type: "group", label: "Site" },
-  { to: "/", icon: "🏠", label: "Back to Home" },
-];
+const NAV = ADMIN_NAV;
 
 const PYQ_SUBJECTS = [
   "Mathematics", "General Science", "Social Science", "MIL", "English",
@@ -534,6 +525,7 @@ function PyqUploadForm({ onSuccess }) {
 export default function AdminDashboard() {
   const user = getStoredUser();
   const location = useLocation();
+  const navigate = useNavigate();
   const [docs, setDocs] = useState([]);
   const [pyqPapers, setPyqPapers] = useState([]);
   const [premiumItems, setPremiumItems] = useState([]);
@@ -542,8 +534,22 @@ export default function AdminDashboard() {
   const [fetchError, setFetchError] = useState("");
   const [editingPrice, setEditingPrice] = useState(null);
 
+  const selectTab = (next) => {
+    setTab(next);
+    if (next === "premium") {
+      navigate("/admin#premium", { replace: true });
+    } else if (location.hash) {
+      navigate("/admin", { replace: true });
+    }
+  };
+
   useEffect(() => {
-    if (location.hash === "#premium") setTab("premium");
+    if (location.hash === "#premium") {
+      setTab("premium");
+      requestAnimationFrame(() => {
+        document.getElementById("admin-content-tabs")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }, [location.hash]);
 
   const fetchDocs = () =>
@@ -635,7 +641,7 @@ export default function AdminDashboard() {
   const pageItems = pagination.pageItems;
 
   return (
-    <DashboardLayout user={user} role="admin" navItems={NAV}>
+    <DashboardLayout user={user} role="admin" navItems={NAV} wide>
       <div className="dash-hero dash-hero-admin">
         <div className="dash-hero-bg" aria-hidden="true" />
         <div className="dash-hero-inner">
@@ -665,17 +671,17 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="content-tabs">
-        <button type="button" className={`content-tab ${tab === "pdf" ? "active" : ""}`} onClick={() => setTab("pdf")}>
+      <div className="content-tabs" id="admin-content-tabs">
+        <button type="button" className={`content-tab ${tab === "pdf" ? "active" : ""}`} onClick={() => selectTab("pdf")}>
           📄 PDFs & Notes
         </button>
-        <button type="button" className={`content-tab ${tab === "lecture" ? "active" : ""}`} onClick={() => setTab("lecture")}>
+        <button type="button" className={`content-tab ${tab === "lecture" ? "active" : ""}`} onClick={() => selectTab("lecture")}>
           🎬 Video Lectures
         </button>
-        <button type="button" className={`content-tab ${tab === "pyq" ? "active" : ""}`} onClick={() => setTab("pyq")}>
+        <button type="button" className={`content-tab ${tab === "pyq" ? "active" : ""}`} onClick={() => selectTab("pyq")}>
           📝 PYQ Papers
         </button>
-        <button type="button" className={`content-tab ${tab === "premium" ? "active" : ""}`} onClick={() => setTab("premium")} id="premium">
+        <button type="button" className={`content-tab ${tab === "premium" ? "active" : ""}`} onClick={() => selectTab("premium")}>
           👑 Premium (Paid)
         </button>
       </div>
