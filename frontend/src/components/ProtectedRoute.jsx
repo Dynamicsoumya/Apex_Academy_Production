@@ -1,0 +1,34 @@
+import React, { useEffect, useState } from "react";
+import { Navigate } from "react-router-dom";
+import API from "../api/api";
+import { clearAuth, getStoredUser } from "../utils/auth";
+
+export default function ProtectedRoute({ children, role }) {
+  const user = getStoredUser();
+  const [verified, setVerified] = useState(false);
+  const [invalid, setInvalid] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    if (role && user.role !== role) return;
+
+    API.get("/auth/me")
+      .then(() => setVerified(true))
+      .catch(() => {
+        clearAuth();
+        sessionStorage.setItem("authRedirect", "session_expired");
+        setInvalid(true);
+      });
+  }, [user, role]);
+
+  if (!user || invalid) return <Navigate to="/login" replace />;
+  if (role && user.role !== role) return <Navigate to="/" replace />;
+  if (!verified) {
+    return (
+      <div className="auth-loading" style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span className="auth-spinner" /> Verifying session...
+      </div>
+    );
+  }
+  return children;
+}

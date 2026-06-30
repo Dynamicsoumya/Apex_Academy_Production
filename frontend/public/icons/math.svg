@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="math-bg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b1f3a"/>
+      <stop offset="100%" stop-color="#1a2a6c"/>
+    </linearGradient>
+    <linearGradient id="math-gold" x1="0" y1="0" x2="60" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e8c84a"/>
+      <stop offset="100%" stop-color="#d4af37"/>
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="56" fill="url(#math-bg)" stroke="#d4af37" stroke-width="2"/>
+  <!-- Pi symbol drawn with paths -->
+  <path d="M42 38 H78 M54 38 V72 M66 38 V72" stroke="url(#math-gold)" stroke-width="5" stroke-linecap="round"/>
+  <!-- Plus sign -->
+  <path d="M48 82 H62 M55 75 V89" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <!-- Equals -->
+  <path d="M70 78 H88 M70 86 H88" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Graph line -->
+  <path d="M32 95 L48 80 L62 86 L88 62" stroke="url(#math-gold)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="88" cy="62" r="3.5" fill="#e8c84a"/>
+  <!-- Degree arc -->
+  <path d="M78 48 A10 10 0 0 1 88 42" stroke="#e8c84a" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>
