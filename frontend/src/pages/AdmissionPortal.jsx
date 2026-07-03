@@ -3,14 +3,15 @@ import { Link } from "react-router-dom";
 import API from "../api/api";
 import { getStoredUser } from "../utils/auth";
 import { ADMISSION_COURSES, APPLICATION_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../utils/admissionCourses";
+import AdmissionPaymentPanel from "../components/AdmissionPaymentPanel";
 
 const STEPS = ["Student", "Parents", "Course", "Photos", "Confirm"];
 
 const OFFLINE_STEPS = [
-  { icon: "📝", title: "Submit this form", text: "You will receive a unique Application ID instantly." },
-  { icon: "🏫", title: "Visit Apex Academy", text: "Come to our Dhenkanal center with your Application ID." },
-  { icon: "💵", title: "Pay admission fee", text: "Pay the fee at the office — cash or UPI accepted at center." },
-  { icon: "✅", title: "Seat confirmed", text: "Our team verifies payment and confirms your admission." },
+  { icon: "📝", title: "Submit application", text: "You receive a unique Application ID instantly." },
+  { icon: "📱", title: "Scan & pay via UPI", text: "Use PhonePe or Google Pay QR — pay the admission fee." },
+  { icon: "🧾", title: "Upload screenshot", text: "Upload the payment success screenshot for verification." },
+  { icon: "✅", title: "Admin verifies", text: "Our team confirms payment and your admission." },
 ];
 
 const EMPTY = {
@@ -59,7 +60,7 @@ function OfflineInstructions({ fee, compact = false }) {
           <p className="adm-offline-panel-eyebrow">Offline admission fee</p>
           <h3>Pay at Apex Academy Center</h3>
           <p className="adm-offline-panel-sub">
-            Online payment is not required. Complete your application here, then visit us to pay ₹{fee}.
+            Pay ₹{fee} via PhonePe / Google Pay QR, upload payment screenshot, or visit our Dhenkanal center.
           </p>
         </div>
       </div>
@@ -250,23 +251,25 @@ export default function AdmissionPortal() {
   if (result) {
     return (
       <div className="adm-page">
-        <section className="adm-success-card">
+        <section className="adm-success-card adm-success-card--wide">
           <div className="adm-success-icon">🎉</div>
           <h1>Application Submitted!</h1>
           <p className="adm-app-id">
             Application ID: <strong>{result.applicationId}</strong>
           </p>
-          <p className="adm-success-hint">Save this ID — you will need it when you visit the center.</p>
+          <p className="adm-success-hint">Save this ID. Pay the fee below and upload your payment screenshot.</p>
           <div className="adm-success-meta">
             <span>Payment: {PAYMENT_STATUS_LABELS[result.paymentStatus] || result.paymentStatus}</span>
             <span>Status: {APPLICATION_STATUS_LABELS[result.status] || result.status}</span>
           </div>
 
-          <div className="adm-success-fee-chip">
-            <span>Admission fee</span>
-            <strong>₹{feeInfo.admissionFee}</strong>
-            <small>Pay at center</small>
-          </div>
+          <AdmissionPaymentPanel
+            admission={result}
+            fee={feeInfo.admissionFee}
+            verifyPhone={form.studentPhone}
+            compact
+            onUploaded={(updated) => setResult(updated)}
+          />
 
           <OfflineInstructions fee={feeInfo.admissionFee} compact />
 
@@ -290,7 +293,7 @@ export default function AdmissionPortal() {
           <div className="adm-hero-badges">
             <span>🏆 500+ Students</span>
             <span>📚 Study Portal</span>
-            <span>🏫 Pay Fee at Center</span>
+            <span>📱 UPI · Pay at Center</span>
           </div>
         </div>
       </section>
@@ -430,6 +433,13 @@ export default function AdmissionPortal() {
               <p><strong>{trackResult.studentName}</strong> — {trackResult.course}, Class {trackResult.className}</p>
               <p>Payment: {PAYMENT_STATUS_LABELS[trackResult.paymentStatus]}</p>
               <p>Status: {APPLICATION_STATUS_LABELS[trackResult.status]}</p>
+              <AdmissionPaymentPanel
+                admission={trackResult}
+                fee={feeInfo.admissionFee}
+                verifyPhone={trackPhone}
+                compact
+                onUploaded={(updated) => setTrackResult(updated)}
+              />
             </div>
           )}
         </div>

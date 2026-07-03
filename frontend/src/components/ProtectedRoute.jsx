@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import API from "../api/api";
 import { clearAuth, getStoredUser } from "../utils/auth";
 
 export default function ProtectedRoute({ children, role }) {
   const user = getStoredUser();
+  const location = useLocation();
   const [verified, setVerified] = useState(false);
   const [invalid, setInvalid] = useState(false);
 
@@ -21,7 +22,9 @@ export default function ProtectedRoute({ children, role }) {
       });
   }, [user, role]);
 
-  if (!user || invalid) return <Navigate to="/login" replace />;
+  if (!user || invalid) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
   if (role && user.role !== role) return <Navigate to="/" replace />;
   if (!verified) {
     return (

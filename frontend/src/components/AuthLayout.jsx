@@ -7,7 +7,7 @@ const FEATURES = [
   { icon: "🔐", text: "Secure student portal" },
 ];
 
-export default function AuthLayout({ title, subtitle, children, footerText, footerLink, footerLabel }) {
+export default function AuthLayout({ title, subtitle, children, footerText, footerLink, footerLabel, footerState }) {
   return (
     <div className="auth-page">
       <div className="auth-brand-panel">
@@ -43,7 +43,7 @@ export default function AuthLayout({ title, subtitle, children, footerText, foot
           {footerText && (
             <p className="auth-switch">
               {footerText}{" "}
-              <Link to={footerLink}>{footerLabel}</Link>
+              <Link to={footerLink} state={footerState}>{footerLabel}</Link>
             </p>
           )}
         </div>

@@ -25,9 +25,12 @@ const admissionSchema = new mongoose.Schema(
     admissionFee: { type: Number, required: true },
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "offline_pending", "offline_verified", "failed"],
+      enum: ["pending", "paid", "offline_pending", "proof_submitted", "offline_verified", "failed"],
       default: "pending",
     },
+    paymentScreenshotUrl: { type: String },
+    paymentUtr: { type: String, trim: true },
+    paymentScreenshotUploadedAt: { type: Date },
     razorpayOrderId: String,
     razorpayPaymentId: String,
     razorpaySignature: String,

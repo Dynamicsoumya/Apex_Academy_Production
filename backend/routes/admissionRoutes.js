@@ -1,7 +1,8 @@
 const express = require("express");
 const crypto = require("crypto");
 const Admission = require("../models/Admission");
-const { protect, adminOnly, optionalProtect } = require("../middleware/authMiddleware");
+const AdmissionPaymentSettings = require("../models/AdmissionPaymentSettings");
+const { protect, adminOnly, studentOnly } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const { uploadFile, folderForFile } = require("../utils/s3Storage");
 const {
@@ -59,6 +60,40 @@ async function uploadPhoto(file, label) {
   return url;
 }
 
+async function getPaymentSettingsDoc() {
+  let doc = await AdmissionPaymentSettings.findOne();
+  if (!doc) {
+    doc = await AdmissionPaymentSettings.create({});
+  }
+  return doc;
+}
+
+function formatPaymentQr(settings, fee) {
+  return {
+    admissionFee: fee,
+    currency: "INR",
+    phonePeQrUrl: settings.phonePeQrUrl || "",
+    googlePayQrUrl: settings.googlePayQrUrl || "",
+    upiId: settings.upiId || "",
+    payeeName: settings.payeeName || "Apex Academy",
+    hasQr: Boolean(settings.phonePeQrUrl || settings.googlePayQrUrl),
+  };
+}
+
+function studentOwnsAdmission(admission, user) {
+  if (!admission || !user) return false;
+  if (admission.user && String(admission.user) === String(user._id)) return true;
+  if (user.phone && admission.studentPhone?.trim() === String(user.phone).trim()) return true;
+  if (
+    user.email &&
+    admission.studentEmail &&
+    admission.studentEmail.toLowerCase() === user.email.toLowerCase()
+  ) {
+    return true;
+  }
+  return false;
+}
+
 // @route GET /api/admissions/fee
 router.get("/fee", (req, res) => {
   res.json({
@@ -69,10 +104,64 @@ router.get("/fee", (req, res) => {
   });
 });
 
+// @route GET /api/admissions/payment-qr — public UPI QR codes for admission fee
+router.get("/payment-qr", async (req, res) => {
+  try {
+    const settings = await getPaymentSettingsDoc();
+    res.json(formatPaymentQr(settings, getAdmissionFee()));
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @route GET /api/admissions/payment-settings — admin
+router.get("/payment-settings", protect, adminOnly, async (req, res) => {
+  try {
+    const settings = await getPaymentSettingsDoc();
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// @route PUT /api/admissions/payment-settings — admin upload PhonePe / Google Pay QR
+router.put(
+  "/payment-settings",
+  protect,
+  adminOnly,
+  upload.fields([
+    { name: "phonePeQr", maxCount: 1 },
+    { name: "googlePayQr", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    try {
+      const settings = await getPaymentSettingsDoc();
+      const { upiId, payeeName } = req.body;
+
+      if (upiId !== undefined) settings.upiId = String(upiId).trim();
+      if (payeeName !== undefined) settings.payeeName = String(payeeName).trim() || "Apex Academy";
+
+      if (req.files?.phonePeQr?.[0]) {
+        settings.phonePeQrUrl = await uploadPhoto(req.files.phonePeQr[0], "PhonePe QR");
+      }
+      if (req.files?.googlePayQr?.[0]) {
+        settings.googlePayQrUrl = await uploadPhoto(req.files.googlePayQr[0], "Google Pay QR");
+      }
+
+      settings.updatedBy = req.user._id;
+      await settings.save();
+      res.json(settings);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
+
 // @route POST /api/admissions
 router.post(
   "/",
-  optionalProtect,
+  protect,
+  studentOnly,
   upload.fields([
     { name: "studentPhoto", maxCount: 1 },
     { name: "parentPhoto", maxCount: 1 },
@@ -114,7 +203,7 @@ router.post(
 
       const admission = await Admission.create({
         applicationId,
-        user: req.user?._id,
+        user: req.user._id,
         studentName: studentName.trim(),
         address: address.trim(),
         fatherName: fatherName?.trim(),
@@ -182,14 +271,15 @@ router.get("/my", protect, async (req, res) => {
 // @route GET /api/admissions/stats
 router.get("/stats", protect, adminOnly, async (req, res) => {
   try {
-    const [total, pending, underReview, approved, rejected] = await Promise.all([
+    const [total, pending, underReview, approved, rejected, proofSubmitted] = await Promise.all([
       Admission.countDocuments(),
       Admission.countDocuments({ status: "submitted" }),
       Admission.countDocuments({ status: "under_review" }),
       Admission.countDocuments({ status: "approved" }),
       Admission.countDocuments({ status: "rejected" }),
+      Admission.countDocuments({ paymentStatus: "proof_submitted" }),
     ]);
-    res.json({ total, pending, underReview, approved, rejected });
+    res.json({ total, pending, underReview, approved, rejected, proofSubmitted });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -336,6 +426,50 @@ router.post("/:id/verify-online", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// @route POST /api/admissions/:id/payment-proof — upload UPI payment screenshot
+router.post(
+  "/:id/payment-proof",
+  protect,
+  studentOnly,
+  upload.single("paymentScreenshot"),
+  async (req, res) => {
+    try {
+      const { paymentUtr } = req.body;
+      if (!req.file) {
+        return res.status(400).json({ message: "Payment screenshot is required" });
+      }
+
+      const admission = await Admission.findById(req.params.id);
+      if (!admission) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      if (!studentOwnsAdmission(admission, req.user)) {
+        return res.status(403).json({ message: "You can only upload payment proof for your own application" });
+      }
+      if (admission.paymentStatus === "offline_verified" || admission.paymentStatus === "paid") {
+        return res.status(400).json({ message: "Payment already verified for this application" });
+      }
+
+      const screenshotUrl = await uploadPhoto(req.file, "Payment screenshot");
+      admission.paymentScreenshotUrl = screenshotUrl;
+      admission.paymentUtr = paymentUtr?.trim() || "";
+      admission.paymentScreenshotUploadedAt = new Date();
+      admission.paymentStatus = "proof_submitted";
+      if (admission.status === "submitted") {
+        admission.status = "under_review";
+      }
+      await admission.save();
+
+      res.json({
+        message: "Payment screenshot uploaded. Admin will verify shortly.",
+        admission,
+      });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  }
+);
 
 // @route PATCH /api/admissions/:id
 router.patch("/:id", protect, adminOnly, async (req, res) => {

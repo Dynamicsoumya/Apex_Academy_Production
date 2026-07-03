@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import API from "../api/api";
 import AuthLayout from "../components/AuthLayout";
 import { setAuth } from "../utils/auth";
 
+function afterAuthNavigate(navigate, data, redirectTo) {
+  if (data.role === "admin") {
+    navigate("/admin");
+  } else if (redirectTo && redirectTo !== "/login") {
+    navigate(redirectTo);
+  } else {
+    navigate("/student");
+  }
+}
+
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from;
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,7 +26,7 @@ export default function Login() {
   useEffect(() => {
     if (sessionStorage.getItem("authRedirect") === "session_expired") {
       sessionStorage.removeItem("authRedirect");
-      setError("Your session expired or account was not found. Please sign in again.");
+      setError("Your session expired. Please sign in again.");
     }
   }, []);
 
@@ -25,7 +37,7 @@ export default function Login() {
     try {
       const { data } = await API.post("/auth/login", form);
       setAuth(data);
-      navigate(data.role === "admin" ? "/admin" : "/student");
+      afterAuthNavigate(navigate, data, redirectTo);
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
@@ -35,10 +47,15 @@ export default function Login() {
 
   return (
     <AuthLayout
-      title="Welcome Back"
-      subtitle="Sign in to access your courses, notes & dashboard"
+      title={redirectTo === "/admissions" ? "Sign In to Apply" : "Welcome Back"}
+      subtitle={
+        redirectTo === "/admissions"
+          ? "Student login is required to submit an admission application"
+          : "Sign in to your Apex Academy account"
+      }
       footerText="New to Apex Academy?"
       footerLink="/register"
+      footerState={redirectTo ? { from: redirectTo } : undefined}
       footerLabel="Create an account"
     >
       <form className="auth-form" onSubmit={handleSubmit}>

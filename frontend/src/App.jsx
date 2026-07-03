@@ -37,7 +37,7 @@ function AppContent() {
       {!isAuthPage && !isDashboardPage && <Navbar />}
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/admissions" element={<AdmissionPortal />} />
+        <Route path="/admissions" element={<ProtectedRoute role="student"><AdmissionPortal /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register" element={<Register />} />

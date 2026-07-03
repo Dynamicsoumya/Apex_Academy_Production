@@ -24,6 +24,11 @@ const adminOnly = (req, res, next) => {
   return res.status(403).json({ message: "Admin access only" });
 };
 
+const studentOnly = (req, res, next) => {
+  if (req.user && req.user.role === "student") return next();
+  return res.status(403).json({ message: "Student login required to apply for admission" });
+};
+
 const optionalProtect = async (req, res, next) => {
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
@@ -37,4 +42,4 @@ const optionalProtect = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, optionalProtect };
+module.exports = { protect, adminOnly, studentOnly, optionalProtect };

@@ -7,6 +7,20 @@ const router = express.Router();
 
 const genToken = (id) => jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
+function authPayload(user) {
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    className: user.className,
+    stream: user.stream,
+    isPaidStudent: user.isPaidStudent,
+    purchasedPremium: user.purchasedPremium || [],
+    token: genToken(user._id),
+  };
+}
+
 // @route POST /api/auth/register
 router.post("/register", async (req, res) => {
   try {
@@ -15,7 +29,6 @@ router.post("/register", async (req, res) => {
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ message: "Email already registered" });
 
-    // Only allow 'admin' role creation with admin secret key
     let userRole = "student";
     const adminSecret = process.env.ADMIN_SECRET || process.env.JWT_SECRET;
     if (role === "admin" && req.body.adminSecret === adminSecret) {
@@ -34,14 +47,7 @@ router.post("/register", async (req, res) => {
       role: userRole,
     });
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      className: user.className,
-      token: genToken(user._id),
-    });
+    res.status(201).json(authPayload(user));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -55,16 +61,7 @@ router.post("/login", async (req, res) => {
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      className: user.className,
-      isPaidStudent: user.isPaidStudent,
-      purchasedPremium: user.purchasedPremium || [],
-      token: genToken(user._id),
-    });
+    res.json(authPayload(user));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -75,7 +72,7 @@ router.get("/me", protect, async (req, res) => {
   res.json(req.user);
 });
 
-// @route POST /api/auth/forgot-password — reset password with email + new password
+// @route POST /api/auth/forgot-password
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email, password, confirmPassword } = req.body;

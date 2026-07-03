@@ -6,6 +6,8 @@ import { getStoredUser } from "../utils/auth";
 import { ADMIN_NAV } from "../utils/adminNav";
 import { APPLICATION_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../utils/admissionCourses";
 import { AdminPhoto, PhotoLightbox } from "../components/AdminPhoto";
+import AdminPaymentQrSettings from "../components/AdminPaymentQrSettings";
+import { mediaUrl } from "../utils/mediaUrl";
 
 const NAV = ADMIN_NAV;
 
@@ -30,7 +32,7 @@ function DetailRow({ label, value }) {
 export default function AdminAdmissions() {
   const user = getStoredUser();
   const [list, setList] = useState([]);
-  const [stats, setStats] = useState({ total: 0, pending: 0, underReview: 0, approved: 0, rejected: 0 });
+  const [stats, setStats] = useState({ total: 0, pending: 0, underReview: 0, approved: 0, rejected: 0, proofSubmitted: 0 });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [filter, setFilter] = useState({ status: "", paymentStatus: "" });
@@ -107,7 +109,18 @@ export default function AdminAdmissions() {
   const setStatus = (status) => updateAdmission({ status, adminNotes: notes });
 
   const verifyOffline = () =>
-    updateAdmission({ paymentStatus: "offline_verified", status: "under_review", adminNotes: notes });
+    updateAdmission({
+      paymentStatus: "offline_verified",
+      status: selected.status === "submitted" ? "under_review" : selected.status,
+      adminNotes: notes,
+    });
+
+  const verifyPaymentProof = () =>
+    updateAdmission({
+      paymentStatus: "offline_verified",
+      status: selected.status === "submitted" || selected.status === "under_review" ? "under_review" : selected.status,
+      adminNotes: notes,
+    });
 
   const saveNotes = () => updateAdmission({ adminNotes: notes });
 
@@ -146,10 +159,12 @@ export default function AdminAdmissions() {
           </div>
           <div className="adm-admin-header-actions">
             <button type="button" className="btn btn-outline" onClick={load}>↻ Refresh</button>
-            <Link to="/admissions" className="btn btn-primary">+ Public portal</Link>
+            <Link to="/admin/admissions" className="btn btn-primary">Manage admissions</Link>
           </div>
         </div>
       </header>
+
+      <AdminPaymentQrSettings />
 
       <div className="adm-stats-row">
         <button type="button" className={`adm-stat-card ${!filter.status ? "active" : ""}`} onClick={() => setFilter({ ...filter, status: "" })}>
@@ -166,6 +181,13 @@ export default function AdminAdmissions() {
         </button>
         <button type="button" className={`adm-stat-card rejected ${filter.status === "rejected" ? "active" : ""}`} onClick={() => setFilter({ ...filter, status: "rejected" })}>
           <strong>{stats.rejected}</strong><span>Rejected</span>
+        </button>
+        <button
+          type="button"
+          className={`adm-stat-card proof ${filter.paymentStatus === "proof_submitted" ? "active" : ""}`}
+          onClick={() => setFilter({ status: "", paymentStatus: filter.paymentStatus === "proof_submitted" ? "" : "proof_submitted" })}
+        >
+          <strong>{stats.proofSubmitted}</strong><span>Payment proof</span>
         </button>
       </div>
 
@@ -344,13 +366,30 @@ export default function AdminAdmissions() {
 
               <section className="adm-detail-section">
                 <h3>Payment</h3>
-                <DetailRow label="Mode" value={selected.paymentMode === "online" ? "Online (Razorpay)" : "Offline (at center)"} />
+                <DetailRow label="Mode" value={selected.paymentMode === "online" ? "Online (Razorpay)" : "Offline (UPI / center)"} />
                 <DetailRow label="Fee" value={`₹${selected.admissionFee}`} />
                 <DetailRow label="Payment status" value={PAYMENT_STATUS_LABELS[selected.paymentStatus]} />
+                {selected.paymentUtr && <DetailRow label="UPI / Transaction ID" value={selected.paymentUtr} />}
                 {selected.razorpayPaymentId && <DetailRow label="Transaction ID" value={selected.razorpayPaymentId} />}
-                {selected.paymentMode === "offline" && selected.paymentStatus === "offline_pending" && (
-                  <button type="button" className="btn btn-primary" disabled={actionLoading} onClick={verifyOffline}>
-                    Verify offline payment received
+                {selected.paymentScreenshotUrl && (
+                  <div className="adm-payment-proof-view">
+                    <p>Payment screenshot</p>
+                    <a href={mediaUrl(selected.paymentScreenshotUrl)} target="_blank" rel="noreferrer">
+                      <img src={mediaUrl(selected.paymentScreenshotUrl)} alt="Payment proof" />
+                    </a>
+                    {selected.paymentScreenshotUploadedAt && (
+                      <small>Uploaded {new Date(selected.paymentScreenshotUploadedAt).toLocaleString()}</small>
+                    )}
+                  </div>
+                )}
+                {selected.paymentStatus === "proof_submitted" && (
+                  <button type="button" className="btn btn-primary" disabled={actionLoading} onClick={verifyPaymentProof}>
+                    ✓ Verify payment from screenshot
+                  </button>
+                )}
+                {selected.paymentMode === "offline" && selected.paymentStatus === "offline_pending" && !selected.paymentScreenshotUrl && (
+                  <button type="button" className="btn btn-outline" disabled={actionLoading} onClick={verifyOffline}>
+                    Verify cash / center payment received
                   </button>
                 )}
               </section>

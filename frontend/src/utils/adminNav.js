@@ -7,7 +7,6 @@ export const ADMIN_NAV = [
   { to: "/admin#premium", icon: "👑", label: "Premium Section" },
   { to: "/admin/exams", icon: "📋", label: "Exam Portal" },
   { type: "group", label: "Site" },
-  { to: "/admissions", icon: "✨", label: "Admission Portal" },
   { to: "/questions", icon: "📄", label: "PYQ Papers" },
   { to: "/courses", icon: "🎓", label: "Manage Courses" },
   { to: "/", icon: "🏠", label: "Back to Home" },

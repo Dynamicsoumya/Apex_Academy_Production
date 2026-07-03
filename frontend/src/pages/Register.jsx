@@ -1,11 +1,13 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api/api";
 import AuthLayout from "../components/AuthLayout";
 import { setAuth } from "../utils/auth";
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from;
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -44,7 +46,7 @@ export default function Register() {
     try {
       const { data } = await API.post("/auth/register", form);
       setAuth(data);
-      navigate("/student");
+      navigate(redirectTo && redirectTo !== "/register" ? redirectTo : "/student");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
@@ -54,10 +56,15 @@ export default function Register() {
 
   return (
     <AuthLayout
-      title="Join Apex Academy"
-      subtitle="Create your student account and start your journey to excellence"
+      title={redirectTo === "/admissions" ? "Create Account to Apply" : "Join Apex Academy"}
+      subtitle={
+        redirectTo === "/admissions"
+          ? "Create your student account, then complete your admission form"
+          : "Create your student account to get started"
+      }
       footerText="Already have an account?"
       footerLink="/login"
+      footerState={redirectTo ? { from: redirectTo } : undefined}
       footerLabel="Sign in"
     >
       <form className="auth-form auth-form-register" onSubmit={handleSubmit}>

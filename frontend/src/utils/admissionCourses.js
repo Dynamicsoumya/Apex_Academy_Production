@@ -22,8 +22,9 @@ export function courseLabel(className, stream, course) {
 export const PAYMENT_STATUS_LABELS = {
   pending: "Payment pending",
   paid: "Paid",
-  offline_pending: "Pay at center — pending",
-  offline_verified: "Fee paid at center",
+  offline_pending: "Pay via UPI / at center",
+  proof_submitted: "Screenshot submitted — awaiting verification",
+  offline_verified: "Payment verified",
   failed: "Payment failed",
 };
 
