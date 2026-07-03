@@ -24,6 +24,7 @@ export default function AdmissionPaymentPanel({
   fee = 500,
   verifyPhone,
   compact = false,
+  readOnlyPayment = false,
   onUploaded,
 }) {
   const [paymentQr, setPaymentQr] = useState(null);
@@ -35,15 +36,14 @@ export default function AdmissionPaymentPanel({
   const [success, setSuccess] = useState("");
 
   const phone = verifyPhone || admission?.studentPhone || "";
-  const canUpload =
-    admission &&
-    phone &&
-    !["offline_verified", "paid"].includes(admission.paymentStatus);
+  const paymentDone = ["offline_verified", "paid"].includes(admission?.paymentStatus);
+  const proofSubmitted = admission?.paymentStatus === "proof_submitted";
+  const canUpload = admission && phone && !paymentDone && !readOnlyPayment;
 
   useEffect(() => {
     API.get("/admissions/payment-qr")
       .then((res) => setPaymentQr(res.data))
-      .catch(() => setPaymentQr({ admissionFee: fee, hasQr: false }));
+      .catch(() => setPaymentQr({ admissionFee: fee, hasQr: false, hasUpi: false }));
   }, [fee]);
 
   useEffect(() => {
@@ -59,8 +59,8 @@ export default function AdmissionPaymentPanel({
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!admission?._id) return setError("Application not found.");
-    if (!phone.trim()) return setError("Enter student mobile number.");
-    if (!screenshot) return setError("Upload payment screenshot.");
+    if (!phone.trim()) return setError("Student mobile number is required.");
+    if (!screenshot) return setError("Please upload payment screenshot.");
 
     setLoading(true);
     setError("");
@@ -75,7 +75,7 @@ export default function AdmissionPaymentPanel({
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      setSuccess(data.message || "Screenshot uploaded!");
+      setSuccess(data.message || "Screenshot submitted to admin!");
       setScreenshot(null);
       setUtr("");
       if (onUploaded) onUploaded(data.admission);
@@ -88,58 +88,106 @@ export default function AdmissionPaymentPanel({
 
   const amount = paymentQr?.admissionFee ?? fee;
   const payee = paymentQr?.payeeName || "Apex Academy";
+  const hasPaymentInfo = paymentQr?.hasQr || paymentQr?.hasUpi;
+
+  if (paymentDone && admission?.status === "approved") {
+    return (
+      <div className="adm-payment-complete-box">
+        <span>🎓</span>
+        <div>
+          <h3>Admission complete!</h3>
+          <p>Your Admission ID:</p>
+          <strong className="adm-payment-complete-id">{admission.applicationId}</strong>
+          <p className="adm-payment-complete-hint">Payment verified. Save this ID for your records.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`adm-payment-panel ${compact ? "adm-payment-panel--compact" : ""}`}>
+      <div className="adm-pay-flow-steps">
+        <div className={`adm-pay-flow-step ${!proofSubmitted && !paymentDone ? "active" : "done"}`}>
+          <span>1</span> Scan &amp; pay
+        </div>
+        <div className={`adm-pay-flow-step ${proofSubmitted ? "done" : !paymentDone ? "active" : ""}`}>
+          <span>2</span> Upload screenshot
+        </div>
+        <div className={`adm-pay-flow-step ${proofSubmitted ? "active" : ""}`}>
+          <span>3</span> Admin verifies
+        </div>
+      </div>
+
+      {admission && (
+        <p className="adm-payment-app-id">
+          Application ID: <strong>{admission.applicationId}</strong>
+        </p>
+      )}
+
       <div className="adm-payment-panel-head">
         <span className="adm-payment-panel-icon">📱</span>
         <div>
-          <p className="adm-offline-panel-eyebrow">Offline UPI payment</p>
-          <h3>Pay ₹{amount} via PhonePe or Google Pay</h3>
+          <p className="adm-offline-panel-eyebrow">Step 1 — Pay admission fee</p>
+          <h3>Pay ₹{amount} via UPI</h3>
           <p className="adm-offline-panel-sub">
-            Scan the QR below, pay <strong>₹{amount}</strong> to <strong>{payee}</strong>, then upload the payment screenshot.
+            Scan admin QR or pay to UPI ID <strong>{paymentQr?.upiId || "below"}</strong> — amount <strong>₹{amount}</strong> to <strong>{payee}</strong>.
           </p>
         </div>
       </div>
 
-      {paymentQr?.upiId && !paymentQr?.hasQr && (
-        <div className="adm-upi-only-box">
-          <p>Pay to UPI ID:</p>
-          <strong>{paymentQr.upiId}</strong>
-          <small>Amount: ₹{amount}</small>
-        </div>
-      )}
-
-      {paymentQr?.hasQr ? (
-        <div className="adm-qr-grid">
-          <QrCard label="PhonePe" icon="💜" url={paymentQr.phonePeQrUrl} upiId={paymentQr.upiId} />
-          <QrCard label="Google Pay" icon="🔵" url={paymentQr.googlePayQrUrl} upiId={paymentQr.upiId} />
-        </div>
-      ) : (
+      {!hasPaymentInfo ? (
         <p className="adm-qr-missing">
-          QR codes will appear here once admin uploads them. You can still pay at the center or WhatsApp us.
+          Admin has not uploaded UPI QR / UPI ID yet. Please check back later or contact Apex Academy office.
         </p>
+      ) : (
+        <>
+          {paymentQr?.upiId && (
+            <div className="adm-upi-only-box adm-upi-only-box--prominent">
+              <p>Pay to this UPI ID</p>
+              <strong>{paymentQr.upiId}</strong>
+              <small>Amount: ₹{amount} · {payee}</small>
+            </div>
+          )}
+
+          {paymentQr?.hasQr && (
+            <div className="adm-qr-grid">
+              <QrCard label="PhonePe" icon="💜" url={paymentQr.phonePeQrUrl} upiId={paymentQr.upiId} />
+              <QrCard label="Google Pay" icon="🔵" url={paymentQr.googlePayQrUrl} upiId={paymentQr.upiId} />
+            </div>
+          )}
+        </>
       )}
 
       {admission && (
         <p className="adm-payment-status-line">
-          Payment status:{" "}
-          <strong>{PAYMENT_STATUS_LABELS[admission.paymentStatus] || admission.paymentStatus}</strong>
+          Status: <strong>{PAYMENT_STATUS_LABELS[admission.paymentStatus] || admission.paymentStatus}</strong>
         </p>
+      )}
+
+      {proofSubmitted && (
+        <div className="adm-proof-submitted-box">
+          <p>✅ Payment screenshot sent to admin. Your Admission ID <strong>{admission.applicationId}</strong> will be confirmed after verification.</p>
+        </div>
       )}
 
       {canUpload && (
         <form className="adm-proof-form" onSubmit={handleUpload}>
-          <h4>Upload payment screenshot</h4>
+          <h4>Step 2 — Upload payment screenshot</h4>
           <p className="adm-proof-hint">
-            After paying, take a screenshot of the successful payment screen and upload it here.
+            After successful UPI payment, choose your payment screenshot image and submit.
           </p>
+
+          {!hasPaymentInfo && (
+            <p className="adm-proof-hint adm-proof-hint--warn">
+              Admin UPI QR is not set yet — you can still upload screenshot if you already paid.
+            </p>
+          )}
 
           {error && <div className="adm-alert">{error}</div>}
           {success && <div className="adm-proof-success">{success}</div>}
 
           <label className="adm-proof-field">
-            UPI transaction ID (optional)
+            UPI transaction ID (recommended)
             <input
               value={utr}
               onChange={(e) => setUtr(e.target.value)}
@@ -147,40 +195,67 @@ export default function AdmissionPaymentPanel({
             />
           </label>
 
-          <div className="adm-proof-upload">
-            {preview ? (
-              <img src={preview} alt="Payment screenshot preview" className="adm-proof-preview" />
-            ) : (
-              <div className="adm-proof-placeholder">
-                <span>🧾</span>
-                <p>Payment screenshot</p>
-              </div>
-            )}
-            <label className="btn btn-outline adm-upload-btn">
-              Choose screenshot
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-              />
-            </label>
-          </div>
+          <div className="adm-proof-upload-card">
+            <div className={`adm-proof-dropzone ${preview ? "has-preview" : ""}`}>
+              {preview ? (
+                <img src={preview} alt="Payment screenshot preview" className="adm-proof-preview" />
+              ) : (
+                <div className="adm-proof-placeholder">
+                  <span className="adm-proof-placeholder-icon">🧾</span>
+                  <p>Tap below to select payment screenshot</p>
+                  <small>JPG, PNG · from PhonePe / GPay success screen</small>
+                </div>
+              )}
+            </div>
 
-          <button type="submit" className="btn btn-primary join-glow-btn" disabled={loading}>
-            {loading ? "Uploading…" : "Submit payment proof"}
-          </button>
+            {screenshot && (
+              <p className="adm-screenshot-name">
+                <span>✓</span> {screenshot.name}
+              </p>
+            )}
+
+            <div className="adm-proof-actions">
+              <label className="adm-screenshot-btn">
+                <span className="adm-btn-icon" aria-hidden="true">📷</span>
+                <span className="adm-btn-text">
+                  <strong>Choose screenshot</strong>
+                  <small>Select image from gallery</small>
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="adm-file-input"
+                  onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="adm-submit-proof-btn"
+                disabled={loading || !screenshot}
+              >
+                {loading ? (
+                  <>
+                    <span className="adm-btn-spinner" />
+                    Submitting…
+                  </>
+                ) : (
+                  <>
+                    <span className="adm-btn-icon" aria-hidden="true">✅</span>
+                    <span className="adm-btn-text">
+                      <strong>Submit to admin for verification</strong>
+                      <small>Send payment proof to Apex Academy</small>
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </form>
       )}
 
-      {admission?.paymentStatus === "proof_submitted" && (
-        <p className="adm-proof-waiting">
-          ✅ Screenshot received — admin will verify your payment soon.
-        </p>
-      )}
-
-      {(admission?.paymentStatus === "offline_verified" || admission?.paymentStatus === "paid") && (
-        <p className="adm-proof-verified">✅ Payment verified by Apex Academy.</p>
+      {paymentDone && admission?.status !== "approved" && (
+        <p className="adm-proof-verified">✅ Payment verified — admission approval pending.</p>
       )}
     </div>
   );

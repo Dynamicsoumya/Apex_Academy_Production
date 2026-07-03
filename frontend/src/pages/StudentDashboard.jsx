@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import DashboardReviewsBlock from "../components/DashboardReviewsBlock";
+import StudentAdmissionCard from "../components/StudentAdmissionCard";
 import SubjectIcon from "../components/SubjectIcon";
 import Pagination from "../components/Pagination";
 import { mediaUrl } from "../utils/mediaUrl";
@@ -136,6 +137,8 @@ export default function StudentDashboard() {
           </select>
         </div>
       </header>
+
+      <StudentAdmissionCard />
 
       {fetchError && (
         <div className="auth-alert auth-alert-error dash-alert">

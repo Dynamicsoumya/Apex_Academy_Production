@@ -146,12 +146,30 @@ export default function AdmissionPortal() {
   const [trackPhone, setTrackPhone] = useState("");
   const [trackResult, setTrackResult] = useState(null);
   const [trackError, setTrackError] = useState("");
+  const [myApp, setMyApp] = useState(null);
 
   useEffect(() => {
     API.get("/admissions/fee")
       .then((res) => setFeeInfo(res.data))
       .catch(() => {});
+    API.get("/admissions/my")
+      .then((res) => {
+        const list = res.data || [];
+        setMyApp(list.find((a) => a.status !== "rejected") || list[0] || null);
+      })
+      .catch(() => setMyApp(null));
   }, []);
+
+  const refreshMyApp = () => {
+    API.get("/admissions/my")
+      .then((res) => {
+        const list = res.data || [];
+        const app = list.find((a) => a.status !== "rejected") || list[0] || null;
+        setMyApp(app);
+        if (result && app) setResult(app);
+      })
+      .catch(() => {});
+  };
 
   const selectedCourse = ADMISSION_COURSES.find((c) => c.id === form.courseId) || ADMISSION_COURSES[0];
 
@@ -249,29 +267,50 @@ export default function AdmissionPortal() {
   };
 
   if (result) {
+    const isComplete = result.status === "approved" && ["offline_verified", "paid"].includes(result.paymentStatus);
+
     return (
       <div className="adm-page">
         <section className="adm-success-card adm-success-card--wide">
-          <div className="adm-success-icon">🎉</div>
-          <h1>Application Submitted!</h1>
-          <p className="adm-app-id">
-            Application ID: <strong>{result.applicationId}</strong>
-          </p>
-          <p className="adm-success-hint">Save this ID. Pay the fee below and upload your payment screenshot.</p>
-          <div className="adm-success-meta">
-            <span>Payment: {PAYMENT_STATUS_LABELS[result.paymentStatus] || result.paymentStatus}</span>
-            <span>Status: {APPLICATION_STATUS_LABELS[result.status] || result.status}</span>
-          </div>
+          {isComplete ? (
+            <>
+              <div className="adm-success-icon">🎓</div>
+              <h1>Admission Complete!</h1>
+              <p className="adm-app-id adm-app-id--big">
+                Your Admission ID: <strong>{result.applicationId}</strong>
+              </p>
+              <p className="adm-success-hint">Payment verified by admin. Save this ID for office visits and records.</p>
+            </>
+          ) : (
+            <>
+              <div className="adm-success-icon">🎉</div>
+              <h1>Application Submitted!</h1>
+              <p className="adm-app-id">
+                Application ID: <strong>{result.applicationId}</strong>
+              </p>
+              <p className="adm-success-hint">Step 1: Pay via UPI below · Step 2: Upload screenshot · Step 3: Admin verifies → admission complete</p>
+              <div className="adm-success-meta">
+                <span>Payment: {PAYMENT_STATUS_LABELS[result.paymentStatus] || result.paymentStatus}</span>
+                <span>Status: {APPLICATION_STATUS_LABELS[result.status] || result.status}</span>
+              </div>
+            </>
+          )}
 
-          <AdmissionPaymentPanel
-            admission={result}
-            fee={feeInfo.admissionFee}
-            verifyPhone={form.studentPhone}
-            compact
-            onUploaded={(updated) => setResult(updated)}
-          />
+          {!isComplete && (
+            <AdmissionPaymentPanel
+              admission={result}
+              fee={feeInfo.admissionFee}
+              verifyPhone={form.studentPhone}
+              compact
+              onUploaded={(updated) => setResult(updated)}
+            />
+          )}
 
-          <OfflineInstructions fee={feeInfo.admissionFee} compact />
+          {result.paymentStatus === "proof_submitted" && !isComplete && (
+            <button type="button" className="btn btn-outline adm-refresh-status" onClick={refreshMyApp}>
+              ↻ Check if admin verified
+            </button>
+          )}
 
           <div className="adm-success-actions">
             {user?.role === "student" && <Link to="/student" className="btn btn-primary">Go to Dashboard</Link>}
@@ -285,6 +324,18 @@ export default function AdmissionPortal() {
 
   return (
     <div className="adm-page">
+      {myApp && (
+        <section className="adm-pay-section-top">
+          <h2>Admission payment</h2>
+          <p className="adm-pay-section-sub">Application <strong>{myApp.applicationId}</strong> — pay via admin UPI QR, upload screenshot, submit for verification.</p>
+          <AdmissionPaymentPanel
+            admission={myApp}
+            fee={feeInfo.admissionFee}
+            onUploaded={(updated) => setMyApp(updated)}
+          />
+        </section>
+      )}
+
       <section className="adm-hero">
         <div className="adm-hero-inner">
           <p className="adm-hero-eyebrow">✨ ADMISSIONS 2025–26</p>
@@ -299,6 +350,12 @@ export default function AdmissionPortal() {
       </section>
 
       <section className="adm-form-section">
+        {myApp ? (
+          <div className="adm-form-card adm-already-applied">
+            <h2>Application already submitted</h2>
+            <p>Your ID is <strong>{myApp.applicationId}</strong>. Use the payment section above to pay via UPI and upload screenshot.</p>
+          </div>
+        ) : (
         <div className="adm-form-card">
           <div className="adm-steps">
             {STEPS.map((label, i) => (
@@ -394,7 +451,7 @@ export default function AdmissionPortal() {
                     <span>Admission fee</span>
                     <strong>₹{feeInfo.admissionFee}</strong>
                   </div>
-                  <span className="adm-review-fee-badge">Pay at center only</span>
+                  <span className="adm-review-fee-badge">Pay via UPI QR</span>
                 </div>
               </div>
 
@@ -417,6 +474,7 @@ export default function AdmissionPortal() {
             )}
           </div>
         </div>
+        )}
       </section>
 
       <section className="adm-track-section">

@@ -23,7 +23,7 @@ export const PAYMENT_STATUS_LABELS = {
   pending: "Payment pending",
   paid: "Paid",
   offline_pending: "Pay via UPI / at center",
-  proof_submitted: "Screenshot submitted — awaiting verification",
+  proof_submitted: "Screenshot submitted — admin verifying",
   offline_verified: "Payment verified",
   failed: "Payment failed",
 };
@@ -31,6 +31,6 @@ export const PAYMENT_STATUS_LABELS = {
 export const APPLICATION_STATUS_LABELS = {
   submitted: "Pending",
   under_review: "Under review",
-  approved: "Approved",
+  approved: "Admission complete",
   rejected: "Rejected",
 };

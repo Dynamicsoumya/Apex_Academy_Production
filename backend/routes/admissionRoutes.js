@@ -69,14 +69,18 @@ async function getPaymentSettingsDoc() {
 }
 
 function formatPaymentQr(settings, fee) {
+  const upiId = settings.upiId || "";
+  const hasQr = Boolean(settings.phonePeQrUrl || settings.googlePayQrUrl);
   return {
     admissionFee: fee,
     currency: "INR",
     phonePeQrUrl: settings.phonePeQrUrl || "",
     googlePayQrUrl: settings.googlePayQrUrl || "",
-    upiId: settings.upiId || "",
+    upiId,
     payeeName: settings.payeeName || "Apex Academy",
-    hasQr: Boolean(settings.phonePeQrUrl || settings.googlePayQrUrl),
+    hasQr,
+    hasUpi: Boolean(upiId.trim()),
+    hasPaymentInfo: hasQr || Boolean(upiId.trim()),
   };
 }
 
@@ -470,6 +474,34 @@ router.post(
     }
   }
 );
+
+// @route PATCH /api/admissions/:id/verify-payment — admin confirms UPI screenshot / payment
+router.patch("/:id/verify-payment", protect, adminOnly, async (req, res) => {
+  try {
+    const admission = await Admission.findById(req.params.id);
+    if (!admission) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+    if (admission.paymentStatus === "offline_verified" || admission.paymentStatus === "paid") {
+      return res.status(400).json({ message: "Payment already verified for this application" });
+    }
+
+    admission.paymentStatus = "offline_verified";
+    admission.status = "approved";
+    admission.reviewedBy = req.user._id;
+    admission.reviewedAt = new Date();
+    await admission.save();
+
+    const populated = await Admission.findById(admission._id).populate("reviewedBy", "name email");
+
+    res.json({
+      message: `Admission complete. Student Admission ID: ${admission.applicationId}`,
+      admission: populated,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // @route PATCH /api/admissions/:id
 router.patch("/:id", protect, adminOnly, async (req, res) => {

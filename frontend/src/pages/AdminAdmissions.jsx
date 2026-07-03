@@ -108,19 +108,29 @@ export default function AdminAdmissions() {
 
   const setStatus = (status) => updateAdmission({ status, adminNotes: notes });
 
-  const verifyOffline = () =>
-    updateAdmission({
-      paymentStatus: "offline_verified",
-      status: selected.status === "submitted" ? "under_review" : selected.status,
-      adminNotes: notes,
-    });
+  const verifyPaymentProof = async (item) => {
+    const target = item || selected;
+    if (!target) return;
+    setActionLoading(true);
+    setMsg("");
+    try {
+      const { data } = await API.patch(`/admissions/${target._id}/verify-payment`);
+      if (selected?._id === data.admission._id) {
+        setSelected(data.admission);
+        setNotes(data.admission.adminNotes || "");
+      }
+      setList((prev) => prev.map((a) => (a._id === data.admission._id ? data.admission : a)));
+      setMsg(data.message || `Admission complete — ID ${data.admission.applicationId}`);
+      const { data: statsData } = await API.get("/admissions/stats");
+      setStats(statsData);
+    } catch (err) {
+      setMsg(err.response?.data?.message || "Verification failed");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-  const verifyPaymentProof = () =>
-    updateAdmission({
-      paymentStatus: "offline_verified",
-      status: selected.status === "submitted" || selected.status === "under_review" ? "under_review" : selected.status,
-      adminNotes: notes,
-    });
+  const verifyOffline = () => verifyPaymentProof();
 
   const saveNotes = () => updateAdmission({ adminNotes: notes });
 
@@ -165,6 +175,16 @@ export default function AdminAdmissions() {
       </header>
 
       <AdminPaymentQrSettings />
+
+      <div className="adm-admin-verify-guide">
+        <strong>Admission payment flow</strong>
+        <ol>
+          <li>Upload UPI QR image and/or UPI ID above — students see this in the pay section.</li>
+          <li>Student pays ₹ fee, uploads payment screenshot, and submits.</li>
+          <li>Open application <strong>Details</strong> → view screenshot → click <strong>Complete admission</strong>.</li>
+          <li>Student receives Admission ID (e.g. APEX-2025-0001) on dashboard.</li>
+        </ol>
+      </div>
 
       <div className="adm-stats-row">
         <button type="button" className={`adm-stat-card ${!filter.status ? "active" : ""}`} onClick={() => setFilter({ ...filter, status: "" })}>
@@ -236,7 +256,13 @@ export default function AdminAdmissions() {
             </thead>
             <tbody>
               {list.map((item) => (
-                <tr key={item._id} className={selected?._id === item._id ? "adm-row-selected" : ""}>
+                <tr
+                  key={item._id}
+                  className={[
+                    selected?._id === item._id ? "adm-row-selected" : "",
+                    item.paymentStatus === "proof_submitted" ? "adm-row-proof" : "",
+                  ].filter(Boolean).join(" ")}
+                >
                   <td>
                     <AdminPhoto
                       url={item.studentPhotoUrl}
@@ -276,18 +302,64 @@ export default function AdminAdmissions() {
                     </span>
                   </td>
                   <td>{new Date(item.createdAt).toLocaleString()}</td>
-                  <td>
+                  <td className="adm-actions-cell">
                     <div className="adm-row-actions">
-                      <button type="button" className="btn btn-outline btn-sm" onClick={() => openDetail(item)}>Details</button>
-                      {item.status !== "approved" && (
-                        <button type="button" className="btn btn-sm adm-btn-approve" onClick={() => API.patch(`/admissions/${item._id}`, { status: "approved" }).then(load)}>✓</button>
-                      )}
-                      {item.status !== "rejected" && (
-                        <button type="button" className="btn btn-sm adm-btn-reject" onClick={() => API.patch(`/admissions/${item._id}`, { status: "rejected" }).then(load)}>✕</button>
-                      )}
-                      {item.status === "rejected" && (
-                        <button type="button" className="btn btn-sm adm-btn-delete" onClick={() => deleteRejected(item)} title="Delete rejected application">🗑</button>
-                      )}
+                      <button
+                        type="button"
+                        className="adm-btn-details"
+                        onClick={() => openDetail(item)}
+                        title={`View ${item.applicationId} details`}
+                      >
+                        <span className="adm-action-icon" aria-hidden="true">👁</span>
+                        <span className="adm-action-label">
+                          <strong>View Details</strong>
+                          <small>Full application</small>
+                        </span>
+                      </button>
+
+                      <div className="adm-row-actions-quick">
+                        {item.paymentStatus === "proof_submitted" && (
+                          <button
+                            type="button"
+                            className="adm-action-chip adm-action-chip--verify"
+                            disabled={actionLoading}
+                            onClick={() => verifyPaymentProof(item)}
+                            title="Complete admission"
+                          >
+                            ✓ Verify pay
+                          </button>
+                        )}
+                        {item.status !== "approved" && (
+                          <button
+                            type="button"
+                            className="adm-action-chip adm-action-chip--approve"
+                            onClick={() => API.patch(`/admissions/${item._id}`, { status: "approved" }).then(load)}
+                            title="Approve"
+                          >
+                            ✓
+                          </button>
+                        )}
+                        {item.status !== "rejected" && (
+                          <button
+                            type="button"
+                            className="adm-action-chip adm-action-chip--reject"
+                            onClick={() => API.patch(`/admissions/${item._id}`, { status: "rejected" }).then(load)}
+                            title="Reject"
+                          >
+                            ✕
+                          </button>
+                        )}
+                        {item.status === "rejected" && (
+                          <button
+                            type="button"
+                            className="adm-action-chip adm-action-chip--delete"
+                            onClick={() => deleteRejected(item)}
+                            title="Delete rejected application"
+                          >
+                            🗑
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -300,8 +372,23 @@ export default function AdminAdmissions() {
       {selected && (
         <div className="adm-modal" onClick={() => setSelected(null)}>
           <div className="adm-modal-inner adm-modal-wide" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="adm-modal-close" onClick={() => setSelected(null)}>✕</button>
+            <div className="adm-modal-toolbar">
+              <div className="adm-modal-toolbar-title">
+                <span>Application Details</span>
+                <small>{selected.applicationId}</small>
+              </div>
+              <button
+                type="button"
+                className="adm-modal-close"
+                onClick={() => setSelected(null)}
+                aria-label="Close application details"
+              >
+                <span className="adm-modal-close-icon" aria-hidden="true">✕</span>
+                <span className="adm-modal-close-text">Close</span>
+              </button>
+            </div>
 
+            <div className="adm-modal-scroll">
             <div className="adm-modal-head">
               <div>
                 <p className="adm-modal-eyebrow">Application</p>
@@ -373,7 +460,7 @@ export default function AdminAdmissions() {
                 {selected.razorpayPaymentId && <DetailRow label="Transaction ID" value={selected.razorpayPaymentId} />}
                 {selected.paymentScreenshotUrl && (
                   <div className="adm-payment-proof-view">
-                    <p>Payment screenshot</p>
+                    <p>Student payment screenshot</p>
                     <a href={mediaUrl(selected.paymentScreenshotUrl)} target="_blank" rel="noreferrer">
                       <img src={mediaUrl(selected.paymentScreenshotUrl)} alt="Payment proof" />
                     </a>
@@ -383,9 +470,19 @@ export default function AdminAdmissions() {
                   </div>
                 )}
                 {selected.paymentStatus === "proof_submitted" && (
-                  <button type="button" className="btn btn-primary" disabled={actionLoading} onClick={verifyPaymentProof}>
-                    ✓ Verify payment from screenshot
-                  </button>
+                  <div className="adm-verify-pay-actions">
+                    <button type="button" className="btn btn-primary" disabled={actionLoading} onClick={() => verifyPaymentProof()}>
+                      ✓ Complete admission &amp; give ID to student
+                    </button>
+                    <p className="adm-verify-pay-hint">
+                      Student ID: <strong>{selected.applicationId}</strong> — verify ₹{selected.admissionFee} payment first.
+                    </p>
+                  </div>
+                )}
+                {selected.status === "approved" && ["offline_verified", "paid"].includes(selected.paymentStatus) && (
+                  <div className="adm-admission-complete-badge">
+                    ✅ Admission complete — ID <strong>{selected.applicationId}</strong>
+                  </div>
                 )}
                 {selected.paymentMode === "offline" && selected.paymentStatus === "offline_pending" && !selected.paymentScreenshotUrl && (
                   <button type="button" className="btn btn-outline" disabled={actionLoading} onClick={verifyOffline}>
@@ -408,6 +505,7 @@ export default function AdminAdmissions() {
                   {selected.reviewedBy?.name && ` by ${selected.reviewedBy.name}`}
                 </p>
               )}
+            </div>
             </div>
           </div>
         </div>
