@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import API from "../api/api";
 import { mediaUrl } from "../utils/mediaUrl";
 
-export default function AdminPaymentQrSettings() {
+export default function AdminPaymentQrSettings({ canEdit = false }) {
   const [settings, setSettings] = useState({
     upiId: "",
     payeeName: "Apex Academy",
@@ -30,6 +30,7 @@ export default function AdminPaymentQrSettings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!canEdit) return;
     setSaving(true);
     setMsg("");
     try {
@@ -59,7 +60,11 @@ export default function AdminPaymentQrSettings() {
         <span>📱</span>
         <div>
           <strong>UPI QR codes (PhonePe / Google Pay)</strong>
-          <small>Students scan these to pay admission fee offline</small>
+          <small>
+            {canEdit
+              ? "Students scan these to pay admission fee offline"
+              : "View only — only super admin can edit payment settings"}
+          </small>
         </div>
         <span className="adm-qr-settings-chevron">{open ? "▲" : "▼"}</span>
       </button>
@@ -79,6 +84,7 @@ export default function AdminPaymentQrSettings() {
                     value={settings.upiId || ""}
                     onChange={(e) => setSettings({ ...settings, upiId: e.target.value })}
                     placeholder="apexacademy@ybl"
+                    readOnly={!canEdit}
                   />
                 </label>
                 <label>
@@ -87,6 +93,7 @@ export default function AdminPaymentQrSettings() {
                     value={settings.payeeName || ""}
                     onChange={(e) => setSettings({ ...settings, payeeName: e.target.value })}
                     placeholder="Apex Academy"
+                    readOnly={!canEdit}
                   />
                 </label>
               </div>
@@ -97,10 +104,12 @@ export default function AdminPaymentQrSettings() {
                   {settings.phonePeQrUrl && (
                     <img src={mediaUrl(settings.phonePeQrUrl)} alt="PhonePe QR" className="adm-qr-settings-preview" />
                   )}
-                  <label className="btn btn-outline btn-sm">
-                    {settings.phonePeQrUrl ? "Replace QR" : "Upload QR"}
-                    <input type="file" accept="image/*" hidden onChange={(e) => setPhonePeFile(e.target.files?.[0] || null)} />
-                  </label>
+                  {canEdit && (
+                    <label className="btn btn-outline btn-sm">
+                      {settings.phonePeQrUrl ? "Replace QR" : "Upload QR"}
+                      <input type="file" accept="image/*" hidden onChange={(e) => setPhonePeFile(e.target.files?.[0] || null)} />
+                    </label>
+                  )}
                   {phonePeFile && <small>{phonePeFile.name}</small>}
                 </div>
 
@@ -109,17 +118,23 @@ export default function AdminPaymentQrSettings() {
                   {settings.googlePayQrUrl && (
                     <img src={mediaUrl(settings.googlePayQrUrl)} alt="Google Pay QR" className="adm-qr-settings-preview" />
                   )}
-                  <label className="btn btn-outline btn-sm">
-                    {settings.googlePayQrUrl ? "Replace QR" : "Upload QR"}
-                    <input type="file" accept="image/*" hidden onChange={(e) => setGooglePayFile(e.target.files?.[0] || null)} />
-                  </label>
+                  {canEdit && (
+                    <label className="btn btn-outline btn-sm">
+                      {settings.googlePayQrUrl ? "Replace QR" : "Upload QR"}
+                      <input type="file" accept="image/*" hidden onChange={(e) => setGooglePayFile(e.target.files?.[0] || null)} />
+                    </label>
+                  )}
                   {googlePayFile && <small>{googlePayFile.name}</small>}
                 </div>
               </div>
 
-              <button type="submit" className="btn btn-primary" disabled={saving}>
-                {saving ? "Saving…" : "Save QR settings"}
-              </button>
+              {canEdit ? (
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Saving…" : "Save QR settings"}
+                </button>
+              ) : (
+                <p className="adm-qr-readonly-note">Contact super admin to update UPI ID or QR codes.</p>
+              )}
             </>
           )}
         </form>

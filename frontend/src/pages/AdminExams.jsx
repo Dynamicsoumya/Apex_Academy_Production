@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import { getStoredUser } from "../utils/auth";
-import { ADMIN_NAV } from "../utils/adminNav";
+import { getAdminNav } from "../utils/adminNav";
+import { isSuperAdmin } from "../utils/roles";
 
-const NAV = ADMIN_NAV;
+const staffRole = (user) => (isSuperAdmin(user) ? "superadmin" : "admin");
 
 const CLASSES = ["10th", "11th", "12th"];
 const SCIENCE_SUBJECTS = ["Physics", "Chemistry", "Mathematics", "Biology", "General Science", "English"];
@@ -123,7 +124,7 @@ export default function AdminExams() {
   const failedCount = results.length - passedCount;
 
   return (
-    <DashboardLayout user={user} role="admin" navItems={NAV}>
+    <DashboardLayout user={user} role={staffRole(user)} navItems={getAdminNav(user)}>
       <header className="dash-welcome-card exam-admin-hero">
         <div>
           <p className="dash-greeting">Exam Portal Admin</p>

@@ -4,6 +4,7 @@ import API from "../api/api";
 import SubjectIcon from "../components/SubjectIcon";
 import Pagination from "../components/Pagination";
 import { getStoredUser } from "../utils/auth";
+import { isStaff } from "../utils/roles";
 import { paginateItems, EXAM_PAGE_SIZE, EXAM_PAGE_SIZE_OPTIONS } from "../utils/pagination";
 
 const CLASSES = ["10th", "11th", "12th"];
@@ -264,7 +265,7 @@ export default function ExamPortal() {
     );
   }
 
-  if (user.role === "admin") {
+  if (isStaff(user)) {
     return (
       <div className="exam-portal-page">
         <div className="section exam-section">

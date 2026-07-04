@@ -1,6 +1,9 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+const isStaff = (user) => user && (user.role === "admin" || user.role === "superadmin");
+const isSuperAdmin = (user) => user && user.role === "superadmin";
+
 const protect = async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
@@ -20,8 +23,13 @@ const protect = async (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === "admin") return next();
+  if (isStaff(req.user)) return next();
   return res.status(403).json({ message: "Admin access only" });
+};
+
+const superAdminOnly = (req, res, next) => {
+  if (isSuperAdmin(req.user)) return next();
+  return res.status(403).json({ message: "Super admin access only" });
 };
 
 const studentOnly = (req, res, next) => {
@@ -42,4 +50,12 @@ const optionalProtect = async (req, res, next) => {
   next();
 };
 
-module.exports = { protect, adminOnly, studentOnly, optionalProtect };
+module.exports = {
+  protect,
+  adminOnly,
+  superAdminOnly,
+  studentOnly,
+  optionalProtect,
+  isStaff,
+  isSuperAdmin,
+};

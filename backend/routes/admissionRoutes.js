@@ -2,7 +2,7 @@ const express = require("express");
 const crypto = require("crypto");
 const Admission = require("../models/Admission");
 const AdmissionPaymentSettings = require("../models/AdmissionPaymentSettings");
-const { protect, adminOnly, studentOnly } = require("../middleware/authMiddleware");
+const { protect, adminOnly, superAdminOnly, studentOnly } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const { uploadFile, folderForFile } = require("../utils/s3Storage");
 const {
@@ -128,11 +128,11 @@ router.get("/payment-settings", protect, adminOnly, async (req, res) => {
   }
 });
 
-// @route PUT /api/admissions/payment-settings — admin upload PhonePe / Google Pay QR
+// @route PUT /api/admissions/payment-settings — super admin only (UPI / QR config)
 router.put(
   "/payment-settings",
   protect,
-  adminOnly,
+  superAdminOnly,
   upload.fields([
     { name: "phonePeQr", maxCount: 1 },
     { name: "googlePayQr", maxCount: 1 },
@@ -532,8 +532,8 @@ router.patch("/:id", protect, adminOnly, async (req, res) => {
   }
 });
 
-// @route DELETE /api/admissions/:id — rejected applications only
-router.delete("/:id", protect, adminOnly, async (req, res) => {
+// @route DELETE /api/admissions/:id — super admin only (rejected applications)
+router.delete("/:id", protect, superAdminOnly, async (req, res) => {
   try {
     const admission = await Admission.findById(req.params.id);
     if (!admission) {

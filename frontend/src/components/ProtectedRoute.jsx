@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import API from "../api/api";
 import { clearAuth, getStoredUser } from "../utils/auth";
+import { roleAllowed } from "../utils/roles";
 
 export default function ProtectedRoute({ children, role }) {
   const user = getStoredUser();
@@ -11,7 +12,7 @@ export default function ProtectedRoute({ children, role }) {
 
   useEffect(() => {
     if (!user) return;
-    if (role && user.role !== role) return;
+    if (role && !roleAllowed(user.role, role)) return;
 
     API.get("/auth/me")
       .then(() => setVerified(true))
@@ -25,7 +26,7 @@ export default function ProtectedRoute({ children, role }) {
   if (!user || invalid) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
-  if (role && user.role !== role) return <Navigate to="/" replace />;
+  if (role && !roleAllowed(user.role, role)) return <Navigate to="/" replace />;
   if (!verified) {
     return (
       <div className="auth-loading" style={{ minHeight: "50vh", display: "flex", alignItems: "center", justifyContent: "center" }}>

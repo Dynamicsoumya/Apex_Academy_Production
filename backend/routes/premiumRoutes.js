@@ -1,7 +1,7 @@
 const express = require("express");
 const PremiumItem = require("../models/PremiumItem");
 const User = require("../models/User");
-const { protect, adminOnly, optionalProtect } = require("../middleware/authMiddleware");
+const { protect, adminOnly, optionalProtect, isStaff } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 const { uploadFile, deleteStoredFile, folderForFile } = require("../utils/s3Storage");
 
@@ -19,7 +19,7 @@ function extractYoutubeId(url) {
 
 function userHasAccess(user, itemId) {
   if (!user) return false;
-  if (user.role === "admin") return true;
+  if (isStaff(user)) return true;
   return user.purchasedPremium?.some((id) => String(id) === String(itemId));
 }
 
@@ -44,7 +44,7 @@ function sanitizeItem(item, user) {
 router.get("/", optionalProtect, async (req, res) => {
   try {
     const filter = { isActive: true };
-    if (req.user?.role === "admin" && req.query.all === "true") {
+    if (isStaff(req.user) && req.query.all === "true") {
       delete filter.isActive;
     }
     if (req.query.className) filter.className = req.query.className;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../api/api";
 import { getStoredUser } from "../utils/auth";
+import { isStaff } from "../utils/roles";
 import { ADMISSION_COURSES, APPLICATION_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../utils/admissionCourses";
 import AdmissionPaymentPanel from "../components/AdmissionPaymentPanel";
 
@@ -314,7 +315,7 @@ export default function AdmissionPortal() {
 
           <div className="adm-success-actions">
             {user?.role === "student" && <Link to="/student" className="btn btn-primary">Go to Dashboard</Link>}
-            {user?.role === "admin" && <Link to="/admin/admissions" className="btn btn-primary">View in Admin</Link>}
+            {isStaff(user) && <Link to="/admin/admissions" className="btn btn-primary">View in Admin</Link>}
             <Link to="/" className="btn btn-outline">Back to Home</Link>
           </div>
         </section>

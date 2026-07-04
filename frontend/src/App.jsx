@@ -11,6 +11,9 @@ import StudentDashboard from "./pages/StudentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import AdminRegister from "./pages/AdminRegister";
+import AdminLogin from "./pages/AdminLogin";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
+import SuperAdminRegister from "./pages/SuperAdminRegister";
 import Questions from "./pages/Questions";
 import Premium from "./pages/Premium";
 import ExamPortal from "./pages/ExamPortal";
@@ -20,11 +23,20 @@ import StudentTimetable from "./pages/StudentTimetable";
 import CareerRoadmaps from "./pages/CareerRoadmaps";
 import AdmissionPortal from "./pages/AdmissionPortal";
 import AdminAdmissions from "./pages/AdminAdmissions";
+import AdminUsers from "./pages/AdminUsers";
 import { getStoredUser } from "./utils/auth";
 
 function AppContent() {
   const location = useLocation();
-  const isAuthPage = ["/login", "/register", "/admin-setup", "/forgot-password"].includes(location.pathname);
+  const isAuthPage = [
+    "/login",
+    "/register",
+    "/admin-setup",
+    "/admin/login",
+    "/superadmin/login",
+    "/superadmin/setup",
+    "/forgot-password",
+  ].includes(location.pathname);
   const isDashboardPage =
     location.pathname === "/student" ||
     location.pathname === "/timetable" ||
@@ -39,6 +51,9 @@ function AppContent() {
         <Route path="/" element={<Home />} />
         <Route path="/admissions" element={<ProtectedRoute role="student"><AdmissionPortal /></ProtectedRoute>} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+        <Route path="/superadmin/setup" element={<SuperAdminRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register" element={<Register />} />
         <Route path="/admin-setup" element={<AdminRegister />} />
@@ -63,6 +78,10 @@ function AppContent() {
         <Route
           path="/student"
           element={<ProtectedRoute role="student"><StudentDashboard /></ProtectedRoute>}
+        />
+        <Route
+          path="/admin/users"
+          element={<ProtectedRoute role="superadmin"><AdminUsers /></ProtectedRoute>}
         />
         <Route
           path="/admin/admissions"

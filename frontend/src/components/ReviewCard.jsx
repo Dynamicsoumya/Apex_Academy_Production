@@ -1,9 +1,11 @@
 import React from "react";
 import { StarDisplay } from "./StarRating";
 
+import { isStaff } from "../utils/roles";
+
 export function canDeleteReview(review, user) {
   if (!user) return false;
-  if (user.role === "admin") return true;
+  if (isStaff(user)) return true;
   if (!review.userId || !user._id) return false;
   return String(review.userId) === String(user._id);
 }

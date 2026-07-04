@@ -3,13 +3,14 @@ import { Link } from "react-router-dom";
 import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import { getStoredUser } from "../utils/auth";
-import { ADMIN_NAV } from "../utils/adminNav";
+import { getAdminNav } from "../utils/adminNav";
+import { isSuperAdmin } from "../utils/roles";
 import { APPLICATION_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "../utils/admissionCourses";
 import { AdminPhoto, PhotoLightbox } from "../components/AdminPhoto";
 import AdminPaymentQrSettings from "../components/AdminPaymentQrSettings";
 import { mediaUrl } from "../utils/mediaUrl";
 
-const NAV = ADMIN_NAV;
+const staffRole = (user) => (isSuperAdmin(user) ? "superadmin" : "admin");
 
 const TABS = [
   { id: "", label: "All" },
@@ -158,7 +159,7 @@ export default function AdminAdmissions() {
   };
 
   return (
-    <DashboardLayout user={user} role="admin" navItems={NAV} wide>
+    <DashboardLayout user={user} role={staffRole(user)} navItems={getAdminNav(user)} wide>
       <PhotoLightbox photo={zoomPhoto} onClose={() => setZoomPhoto(null)} />
       <header className="dash-welcome-card">
         <div className="dash-welcome-top">
@@ -174,7 +175,7 @@ export default function AdminAdmissions() {
         </div>
       </header>
 
-      <AdminPaymentQrSettings />
+      <AdminPaymentQrSettings canEdit={isSuperAdmin(user)} />
 
       <div className="adm-admin-verify-guide">
         <strong>Admission payment flow</strong>
@@ -349,7 +350,7 @@ export default function AdminAdmissions() {
                             ✕
                           </button>
                         )}
-                        {item.status === "rejected" && (
+                        {item.status === "rejected" && isSuperAdmin(user) && (
                           <button
                             type="button"
                             className="adm-action-chip adm-action-chip--delete"
@@ -403,7 +404,7 @@ export default function AdminAdmissions() {
                 <button type="button" className="btn adm-btn-pending" disabled={actionLoading} onClick={() => setStatus("submitted")}>⏳ Pending</button>
                 <button type="button" className="btn adm-btn-review" disabled={actionLoading} onClick={() => setStatus("under_review")}>👁 Review</button>
                 <button type="button" className="btn adm-btn-reject" disabled={actionLoading} onClick={() => setStatus("rejected")}>✕ Reject</button>
-                {selected.status === "rejected" && (
+                {selected.status === "rejected" && isSuperAdmin(user) && (
                   <button type="button" className="btn adm-btn-delete" disabled={actionLoading} onClick={() => deleteRejected(selected)}>
                     🗑 Delete
                   </button>

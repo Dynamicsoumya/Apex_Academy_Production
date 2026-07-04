@@ -28,12 +28,14 @@ API.interceptors.response.use(
     const message = err.response?.data?.message || "";
     const isAuthFailure =
       status === 401 ||
-      (status === 403 && message.toLowerCase().includes("admin access"));
+      (status === 403 &&
+        (message.toLowerCase().includes("admin access") ||
+          message.toLowerCase().includes("super admin access")));
 
     if (isAuthFailure && localStorage.getItem("token")) {
       clearAuth();
       const onAuthPage =
-        ["/login", "/register", "/admin-setup", "/forgot-password"].includes(window.location.pathname);
+        ["/login", "/register", "/admin-setup", "/admin/login", "/superadmin/login", "/superadmin/setup", "/forgot-password"].includes(window.location.pathname);
       if (!onAuthPage) {
         sessionStorage.setItem("authRedirect", "session_expired");
         window.location.href = "/login";

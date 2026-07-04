@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { clearAuth, getStoredUser } from "../utils/auth";
+import { isStaff } from "../utils/roles";
 import { PREMIUM_COMING_SOON } from "../utils/features";
 
 const MAIN_LINKS = [
@@ -95,10 +96,10 @@ export default function Navbar() {
                   </Link>
                 </>
               )}
-              {user?.role === "admin" && (
+              {isStaff(user) && (
                 <Link to="/admin" className="nav-pill nav-pill-admin">
                   <span className="nav-pill-icon">⚙️</span>
-                  Admin Panel
+                  {user?.role === "superadmin" ? "Super Admin" : "Admin Panel"}
                 </Link>
               )}
               {user?.role === "student" && (

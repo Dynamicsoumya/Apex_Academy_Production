@@ -2,7 +2,7 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const Review = require("../models/Review");
 const User = require("../models/User");
-const { protect } = require("../middleware/authMiddleware");
+const { protect, isStaff } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 const VALID_CLASSES = ["9th", "10th", "11th", "12th"];
@@ -85,7 +85,7 @@ router.delete("/:id", protect, async (req, res) => {
     const review = await Review.findById(req.params.id);
     if (!review) return res.status(404).json({ message: "Review not found" });
 
-    const isAdmin = req.user.role === "admin";
+    const isAdmin = isStaff(req.user);
     const isOwner =
       review.userId && req.user._id.toString() === review.userId.toString();
 

@@ -3,10 +3,11 @@ import API from "../api/api";
 import DashboardLayout from "../components/DashboardLayout";
 import { TimetableWeekGrid, HolidayCalendar } from "../components/TimetableWidgets";
 import { getStoredUser } from "../utils/auth";
-import { ADMIN_NAV } from "../utils/adminNav";
+import { getAdminNav } from "../utils/adminNav";
+import { isSuperAdmin } from "../utils/roles";
 import { BATCH_PROGRAMS, DAY_NAMES, HOLIDAY_BATCH_OPTIONS } from "../utils/academyClasses";
 
-const NAV = ADMIN_NAV;
+const staffRole = (user) => (isSuperAdmin(user) ? "superadmin" : "admin");
 
 const EMPTY_SLOT = {
   dayOfWeek: 1,
@@ -131,7 +132,7 @@ export default function AdminTimetable() {
   const selectedBatch = BATCH_PROGRAMS.find((b) => b.id === batchId);
 
   return (
-    <DashboardLayout user={user} role="admin" navItems={NAV}>
+    <DashboardLayout user={user} role={staffRole(user)} navItems={getAdminNav(user)}>
       <div className="tt-admin-page">
         <header className="tt-page-header">
           <div>

@@ -4,13 +4,13 @@ import API from "../api/api";
 import AuthLayout from "../components/AuthLayout";
 import { setAuth } from "../utils/auth";
 
-export default function AdminRegister() {
+export default function SuperAdminRegister() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
-    adminSecret: "",
+    superAdminSecret: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,14 +23,14 @@ export default function AdminRegister() {
     try {
       const { data } = await API.post("/auth/register", {
         ...form,
-        role: "admin",
+        role: "superadmin",
         className: "12th",
         stream: "Science",
       });
       setAuth(data);
       navigate("/admin");
     } catch (err) {
-      setError(err.response?.data?.message || "Admin registration failed");
+      setError(err.response?.data?.message || "Super admin registration failed");
     } finally {
       setLoading(false);
     }
@@ -38,13 +38,14 @@ export default function AdminRegister() {
 
   return (
     <AuthLayout
-      title="Create Admin Account"
-      subtitle="For Apex Academy staff only — requires admin secret key"
-      footerText="Already have an admin account?"
-      footerLink="/admin/login"
+      variant="superadmin"
+      title="Create Super Admin Account"
+      subtitle="Platform owner access — requires super admin secret key from backend .env"
+      footerText="Already have a super admin account?"
+      footerLink="/superadmin/login"
       footerLabel="Sign in"
     >
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="auth-form auth-form--superadmin" onSubmit={handleSubmit}>
         {error && (
           <div className="auth-alert auth-alert-error" role="alert">
             <span>⚠</span> {error}
@@ -59,14 +60,14 @@ export default function AdminRegister() {
               id="name"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Admin name"
+              placeholder="Super admin name"
               required
             />
           </div>
         </div>
 
         <div className="auth-field">
-          <label htmlFor="email">Admin Email</label>
+          <label htmlFor="email">Super Admin Email</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">✉</span>
             <input
@@ -74,7 +75,7 @@ export default function AdminRegister() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="admin@apexacademy.com"
+              placeholder="superadmin@apexacademy.com"
               required
             />
           </div>
@@ -105,29 +106,31 @@ export default function AdminRegister() {
         </div>
 
         <div className="auth-field">
-          <label htmlFor="adminSecret">Admin Secret Key</label>
+          <label htmlFor="superAdminSecret">Super Admin Secret Key</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">🔑</span>
             <input
-              id="adminSecret"
+              id="superAdminSecret"
               type="password"
-              value={form.adminSecret}
-              onChange={(e) => setForm({ ...form, adminSecret: e.target.value })}
-              placeholder="Enter Secret Key"
+              value={form.superAdminSecret}
+              onChange={(e) => setForm({ ...form, superAdminSecret: e.target.value })}
+              placeholder="Enter SUPERADMIN_SECRET"
               required
             />
           </div>
-          {/* <small className="auth-hint">Set ADMIN_SECRET in backend/.env file</small> */}
+          <small className="auth-hint">
+            Must match <code>SUPERADMIN_SECRET</code> in <code>backend/.env</code> — not ADMIN_SECRET or JWT_SECRET. Restart backend after editing .env.
+          </small>
         </div>
 
-        <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Admin Account"}
+        <button className="auth-submit auth-submit--superadmin" type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Create Super Admin Account"}
         </button>
 
         <p className="auth-switch">
-          <Link to="/admin/login">← Admin login</Link>
+          <Link to="/superadmin/login">← Super admin login</Link>
           {" · "}
-          <Link to="/login">Student login</Link>
+          <Link to="/admin/login">Admin login</Link>
         </p>
       </form>
     </AuthLayout>

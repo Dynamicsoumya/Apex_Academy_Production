@@ -1,15 +1,31 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-const FEATURES = [
+const DEFAULT_FEATURES = [
   { icon: "📚", text: "Expert-curated study material" },
   { icon: "🎯", text: "Board & entrance exam focus" },
   { icon: "🔐", text: "Secure student portal" },
 ];
 
-export default function AuthLayout({ title, subtitle, children, footerText, footerLink, footerLabel, footerState }) {
+const LOGIN_HIGHLIGHTS = [
+  { value: "9th–12th", label: "Classes" },
+  { value: "PCM · PCB", label: "Science streams" },
+  { value: "500+", label: "Study resources" },
+];
+
+export default function AuthLayout({
+  title,
+  subtitle,
+  children,
+  footerText,
+  footerLink,
+  footerLabel,
+  footerState,
+  variant,
+  features = DEFAULT_FEATURES,
+}) {
   return (
-    <div className="auth-page">
+    <div className={`auth-page${variant ? ` auth-page--${variant}` : ""}`}>
       <div className="auth-brand-panel">
         <div className="auth-brand-bg" />
         <div className="auth-brand-content">
@@ -17,10 +33,22 @@ export default function AuthLayout({ title, subtitle, children, footerText, foot
             <img src="/apex-academy-logo.png" alt="Apex Academy" className="auth-logo" />
           </Link>
           <p className="auth-brand-tagline">
-            Where ambition meets excellence — premium coaching for 11th & 12th students.
+            Where ambition meets excellence — premium coaching for 11th & 12th students in Dhenkanal, Odisha.
           </p>
+
+          {variant === "login" && (
+            <div className="auth-highlight-grid">
+              {LOGIN_HIGHLIGHTS.map((item) => (
+                <div key={item.label} className="auth-highlight-chip">
+                  <strong>{item.value}</strong>
+                  <span>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <ul className="auth-features">
-            {FEATURES.map((f) => (
+            {features.map((f) => (
               <li key={f.text}>
                 <span className="auth-feature-icon">{f.icon}</span>
                 {f.text}
@@ -36,12 +64,13 @@ export default function AuthLayout({ title, subtitle, children, footerText, foot
       <div className="auth-form-panel">
         <div className="auth-form-container">
           <div className="auth-form-header">
+            {variant === "login" && <span className="auth-welcome-badge">Student Portal</span>}
             <h2>{title}</h2>
             {subtitle && <p>{subtitle}</p>}
           </div>
           {children}
           {footerText && (
-            <p className="auth-switch">
+            <p className="auth-switch auth-register-cta">
               {footerText}{" "}
               <Link to={footerLink} state={footerState}>{footerLabel}</Link>
             </p>

@@ -30,11 +30,23 @@ router.post("/register", async (req, res) => {
     if (exists) return res.status(400).json({ message: "Email already registered" });
 
     let userRole = "student";
-    const adminSecret = process.env.ADMIN_SECRET || process.env.JWT_SECRET;
-    if (role === "admin" && req.body.adminSecret === adminSecret) {
+    const adminSecret = (process.env.ADMIN_SECRET || process.env.JWT_SECRET || "").trim();
+    const superAdminSecret = (process.env.SUPERADMIN_SECRET || process.env.JWT_SECRET || "").trim();
+    const submittedAdminSecret = String(req.body.adminSecret || "").trim();
+    const submittedSuperAdminSecret = String(req.body.superAdminSecret || "").trim();
+
+    if (role === "superadmin" && submittedSuperAdminSecret === superAdminSecret) {
+      userRole = "superadmin";
+    } else if (role === "superadmin") {
+      return res.status(403).json({
+        message: "Invalid super admin secret key. Use SUPERADMIN_SECRET from backend/.env (restart server after changing it).",
+      });
+    } else if (role === "admin" && submittedAdminSecret === adminSecret) {
       userRole = "admin";
     } else if (role === "admin") {
-      return res.status(403).json({ message: "Invalid admin secret key" });
+      return res.status(403).json({
+        message: "Invalid admin secret key. Use ADMIN_SECRET from backend/.env (restart server after changing it).",
+      });
     }
 
     const user = await User.create({
@@ -56,11 +68,29 @@ router.post("/register", async (req, res) => {
 // @route POST /api/auth/login
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, portal } = req.body;
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
+    if (portal === "admin") {
+      if (user.role === "superadmin") {
+        return res.status(403).json({ message: "Use the super admin login page at /superadmin/login" });
+      }
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "This login is for administrators only" });
+      }
+    } else if (portal === "superadmin") {
+      if (user.role !== "superadmin") {
+        return res.status(403).json({ message: "Super admin access only" });
+      }
+    } else if (user.role === "admin") {
+      return res.status(403).json({ message: "Use the admin login page at /admin/login" });
+    } else if (user.role === "superadmin") {
+      return res.status(403).json({ message: "Use the super admin login page at /superadmin/login" });
+    }
+
     res.json(authPayload(user));
   } catch (err) {
     res.status(500).json({ message: err.message });

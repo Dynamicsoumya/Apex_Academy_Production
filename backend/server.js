@@ -15,6 +15,7 @@ const premiumRoutes = require("./routes/premiumRoutes");
 const examRoutes = require("./routes/examRoutes");
 const timetableRoutes = require("./routes/timetableRoutes");
 const admissionRoutes = require("./routes/admissionRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -56,6 +57,7 @@ app.use("/api/premium", premiumRoutes);
 app.use("/api/exams", examRoutes);
 app.use("/api/timetable", timetableRoutes);
 app.use("/api/admissions", admissionRoutes);
+app.use("/api/users", userRoutes);
 
 // API 404 handler
 app.use("/api", (req, res) => {

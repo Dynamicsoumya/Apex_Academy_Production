@@ -5,13 +5,15 @@ import DashboardLayout from "../components/DashboardLayout";
 import SubjectIcon from "../components/SubjectIcon";
 import Pagination from "../components/Pagination";
 import { getStoredUser } from "../utils/auth";
-import { ADMIN_NAV } from "../utils/adminNav";
+import { getAdminNav } from "../utils/adminNav";
+import { isSuperAdmin } from "../utils/roles";
 import { ACADEMY_CLASSES, subjectsForClass } from "../utils/academyClasses";
 import { isPdfDoc, isLectureDoc } from "../utils/documents";
 import { mediaUrl } from "../utils/mediaUrl";
 import { paginateItems } from "../utils/pagination";
 
-const NAV = ADMIN_NAV;
+const getNav = (user) => getAdminNav(user);
+const staffRole = (user) => (isSuperAdmin(user) ? "superadmin" : "admin");
 
 const PYQ_SUBJECTS = [
   "Mathematics", "General Science", "Social Science", "MIL", "English",
@@ -641,7 +643,7 @@ export default function AdminDashboard() {
   const pageItems = pagination.pageItems;
 
   return (
-    <DashboardLayout user={user} role="admin" navItems={NAV} wide>
+    <DashboardLayout user={user} role={staffRole(user)} navItems={getNav(user)} wide>
       <div className="dash-hero dash-hero-admin">
         <div className="dash-hero-bg" aria-hidden="true" />
         <div className="dash-hero-inner">

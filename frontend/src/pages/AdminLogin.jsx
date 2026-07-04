@@ -1,36 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../api/api";
 import AuthLayout from "../components/AuthLayout";
 import { setAuth } from "../utils/auth";
 
-export default function AdminRegister() {
+export default function AdminLogin() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    adminSecret: "",
-  });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (sessionStorage.getItem("authRedirect") === "session_expired") {
+      sessionStorage.removeItem("authRedirect");
+      setError("Your session expired. Please sign in again.");
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const { data } = await API.post("/auth/register", {
-        ...form,
-        role: "admin",
-        className: "12th",
-        stream: "Science",
-      });
+      const { data } = await API.post("/auth/login", { ...form, portal: "admin" });
       setAuth(data);
       navigate("/admin");
     } catch (err) {
-      setError(err.response?.data?.message || "Admin registration failed");
+      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -38,11 +35,11 @@ export default function AdminRegister() {
 
   return (
     <AuthLayout
-      title="Create Admin Account"
-      subtitle="For Apex Academy staff only — requires admin secret key"
-      footerText="Already have an admin account?"
-      footerLink="/admin/login"
-      footerLabel="Sign in"
+      title="Administrator Login"
+      subtitle="Sign in to the Apex Academy admin panel"
+      footerText="Need a new admin account?"
+      footerLink="/admin-setup"
+      footerLabel="Create admin account"
     >
       <form className="auth-form" onSubmit={handleSubmit}>
         {error && (
@@ -52,30 +49,17 @@ export default function AdminRegister() {
         )}
 
         <div className="auth-field">
-          <label htmlFor="name">Full Name</label>
-          <div className="auth-input-wrap">
-            <span className="auth-input-icon">👤</span>
-            <input
-              id="name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              placeholder="Admin name"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="auth-field">
           <label htmlFor="email">Admin Email</label>
           <div className="auth-input-wrap">
             <span className="auth-input-icon">✉</span>
             <input
               id="email"
               type="email"
+              placeholder="admin@apexacademy.com"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              placeholder="admin@apexacademy.com"
               required
+              autoComplete="email"
             />
           </div>
         </div>
@@ -87,11 +71,11 @@ export default function AdminRegister() {
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="Minimum 6 characters"
               required
-              minLength={6}
+              autoComplete="current-password"
             />
             <button
               type="button"
@@ -104,30 +88,21 @@ export default function AdminRegister() {
           </div>
         </div>
 
-        <div className="auth-field">
-          <label htmlFor="adminSecret">Admin Secret Key</label>
-          <div className="auth-input-wrap">
-            <span className="auth-input-icon">🔑</span>
-            <input
-              id="adminSecret"
-              type="password"
-              value={form.adminSecret}
-              onChange={(e) => setForm({ ...form, adminSecret: e.target.value })}
-              placeholder="Enter Secret Key"
-              required
-            />
-          </div>
-          {/* <small className="auth-hint">Set ADMIN_SECRET in backend/.env file</small> */}
-        </div>
-
         <button className="auth-submit" type="submit" disabled={loading}>
-          {loading ? "Creating..." : "Create Admin Account"}
+          {loading ? (
+            <span className="auth-loading">
+              <span className="auth-spinner" /> Signing in...
+            </span>
+          ) : (
+            "Sign In as Admin"
+          )}
         </button>
 
         <p className="auth-switch">
-          <Link to="/admin/login">← Admin login</Link>
-          {" · "}
-          <Link to="/login">Student login</Link>
+          <Link to="/login">← Student login</Link>
+        </p>
+        <p className="auth-switch superadmin-login-link">
+          Super Admin? <Link to="/superadmin/login">Super admin login</Link>
         </p>
       </form>
     </AuthLayout>

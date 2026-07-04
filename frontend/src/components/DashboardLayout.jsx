@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { staffRoleLabel } from "../utils/roles";
 
 export default function DashboardLayout({ user, role, navItems, children, wide = false }) {
   const location = useLocation();
@@ -16,7 +17,8 @@ export default function DashboardLayout({ user, role, navItems, children, wide =
     .slice(0, 2)
     .toUpperCase();
 
-  const portalLabel = role === "admin" ? "Admin Portal" : "Student Portal";
+  const portalLabel =
+    role === "superadmin" ? "Super Admin Portal" : role === "admin" ? "Admin Portal" : "Student Portal";
 
   const isNavActive = (item) => {
     const current = `${location.pathname}${location.hash}`;
@@ -53,7 +55,7 @@ export default function DashboardLayout({ user, role, navItems, children, wide =
               {role === "student" && user?.className ? `Class ${user.className}` : "Apex Academy"}
             </span>
             <span className={`dash-role-badge dash-role-${role}`}>
-              {role === "admin" ? "Administrator" : "Student"}
+              {staffRoleLabel(role)}
             </span>
           </div>
         </div>
