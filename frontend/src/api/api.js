@@ -2,8 +2,8 @@ import axios from "axios";
 import { clearAuth } from "../utils/auth";
 
 function getApiBaseUrl() {
-  if (process.env.REACT_APP_API_URL) {
-    let url = process.env.REACT_APP_API_URL.replace(/\/$/, "");
+  if (process.env.REACT_APP_API_URL||process.env.REACT_APP_API_URL_NEW) {
+    let url = process.env.REACT_APP_API_URL?.replace(/\/$/, "") || process.env.REACT_APP_API_URL_NEW?.replace(/\/$/, "");
     if (!url.endsWith("/api")) url = `${url}/api`;
     return url;
   }
